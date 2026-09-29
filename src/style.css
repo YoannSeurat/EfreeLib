@@ -1,0 +1,29 @@
+:root {
+  font-family: Arial, sans-serif;
+}
+#app {
+  margin: 0 300px 0;
+}
+
+.line {
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  gap: 10px;
+}
+
+input,
+button {
+  border: 1px solid black;
+  border-radius: 7px;
+  transition: 0.2s;
+}
+input {
+  cursor: text;
+}
+button {
+  cursor: pointer;
+}
+button:active {
+  transform: scale(0.95);
+}
