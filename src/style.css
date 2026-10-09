@@ -1,0 +1,128 @@
+:root {
+  font-family: Arial, sans-serif;
+}
+
+header {
+  background-color: rgb(71, 71, 71);
+  color: white;
+  padding: 0 200px 0;
+  justify-content: space-between;
+}
+nav {
+  display: flex;
+  gap: 10px;
+}
+a {
+  padding: 10px;
+  color: white;
+  text-decoration: none;
+  transition: 0.2s;
+}
+a:hover {
+  transform: scale(1.05);
+}
+a:active {
+  transform: scale(0.95);
+}
+h3 {
+  color: black;
+}
+
+#routerview {
+  margin: 0 300px 0;
+}
+
+.line {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: center;
+}
+
+input,
+button {
+  border: 1px solid black;
+  border-radius: 7px;
+  transition: 0.2s;
+}
+input {
+  cursor: text;
+}
+button {
+  cursor: pointer;
+  transition: 0.2s;
+}
+button:hover {
+  transform: scale(1.05);
+}
+button:active {
+  transform: scale(0.95);
+}
+
+.book-info p {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.book-details-page {
+  margin: 20px 0;
+}
+.back-btn {
+  margin-bottom: 20px;
+}
+.book-header {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+.details-cover {
+  width: 160px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+.header-info h2 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+.header-info p {
+  margin: 6px 0;
+}
+.header-info a {
+  padding: 0;
+}
+.book-description {
+  margin-top: 20px;
+}
+.book-description h3 {
+  margin-bottom: 8px;
+}
+.book-description p {
+  line-height: 1.5;
+}
+.book-subtitle {
+  margin-top: -6px;
+  margin-bottom: 12px;
+}
+.description-text p {
+  margin: 8px 0;
+}
+.status-msg {
+  margin: 20px 0;
+}
+
+.embedded-viewer-section {
+  margin-top: 30px;
+}
+.embedded-viewer-section h3 {
+  margin-bottom: 12px;
+}
+.viewer-status {
+  padding: 14px 18px;
+  margin-bottom: 16px;
+}
+.viewer-canvas {
+  width: 100%;
+  height: 600px;
+}

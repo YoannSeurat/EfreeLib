@@ -441,3 +441,6 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+consignes.*
+*.env
