@@ -1,6 +1,17 @@
 <script setup>
 import { ref } from 'vue'
+import { useStore } from 'vuex'
 import { searchBooks } from '@/services/googleBooks.js'
+
+const store = useStore()
+
+function isInLibrary(id) {
+  return store.getters.isInLibrary(id)
+}
+
+function addToLibrary(book) {
+  store.dispatch('addBook', book)
+}
 
 const searchQuery = ref('')
 const books = ref([])
@@ -52,14 +63,16 @@ async function searchBooks_searchbar() {
   </div>
 
   <div v-if="books.length > 0" class="books-grid">
-    <article v-for="book in books" :key="book.id" class="book-card">
-      <RouterLink
-        :to="`/book/${book.id}`"
-        class="book-cover-link"
-        :title="`View details for ${book.title}`"
-      >
-        <img :src="book.cover" :alt="book.title" class="book-cover" />
-      </RouterLink>
+    <article v-for="book in books" :key="book.id" class="book-card line">
+      <div>
+        <RouterLink
+          :to="`/book/${book.id}`"
+          class="book-cover-link"
+          :title="`View details for ${book.title}`"
+        >
+          <img :src="book.cover" :alt="book.title" class="book-cover" />
+        </RouterLink>
+      </div>
       <div class="book-info">
         <RouterLink :to="`/book/${book.id}`" class="book-title-link">
           <h3>{{ book.title }}</h3>
@@ -67,6 +80,9 @@ async function searchBooks_searchbar() {
         <p><strong>Author:</strong> {{ book.authors }}</p>
         <p><strong>Year:</strong> {{ book.year }}</p>
         <p>{{ book.description }}</p>
+        <button :disabled="isInLibrary(book.id)" @click="addToLibrary(book)">
+          {{ isInLibrary(book.id) ? 'In library' : 'Add to library' }}
+        </button>
       </div>
     </article>
   </div>

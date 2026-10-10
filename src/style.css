@@ -2,7 +2,15 @@
   font-family: Arial, sans-serif;
 }
 
+body {
+  margin: 0;
+}
+
 header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  min-height: 50px;
   background-color: rgb(71, 71, 71);
   color: white;
   padding: 0 200px 0;
@@ -59,10 +67,17 @@ button:active {
   transform: scale(0.95);
 }
 
+.book-info {
+  min-width: 0;
+}
 .book-info p {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.book-card {
+  padding: 10px;
+  margin: 10px 0;
 }
 
 .book-details-page {
@@ -110,6 +125,11 @@ button:active {
 }
 .status-msg {
   margin: 20px 0;
+}
+.inline-link {
+  padding: 0;
+  color: rgb(71, 71, 71);
+  text-decoration: underline;
 }
 
 .embedded-viewer-section {

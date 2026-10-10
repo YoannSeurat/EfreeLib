@@ -3,6 +3,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getBookById } from '@/services/googleBooks.js'
 import EmbeddedViewerComponent from '@/components/EmbeddedViewerComponent.vue'
+import { useStore } from 'vuex'
 
 const route = useRoute()
 const router = useRouter()
@@ -39,6 +40,24 @@ watch(
     fetchBookDetails()
   },
 )
+
+const store = useStore()
+
+function isInLibrary(id) {
+  return store.getters.isInLibrary(id)
+}
+
+function addToLibrary(book) {
+  store.dispatch('addBook', book)
+}
+
+function isRead(id) {
+  return store.getters.isRead(id)
+}
+
+function toggleRead(id) {
+  store.dispatch('toggleRead', id)
+}
 </script>
 
 <template>
@@ -74,6 +93,15 @@ watch(
             </a>
           </p>
         </div>
+      </div>
+
+      <div class="line">
+        <button :disabled="isInLibrary(book.id)" @click="addToLibrary(book)">
+          {{ isInLibrary(book.id) ? 'In library' : 'Add to library' }}
+        </button>
+        <button v-if="isInLibrary(book.id)" @click="toggleRead(book.id)">
+          {{ isRead(book.id) ? 'Mark as unread' : 'Mark as read' }}
+        </button>
       </div>
 
       <div class="book-description">
