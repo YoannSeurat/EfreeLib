@@ -2,7 +2,15 @@
   font-family: Arial, sans-serif;
 }
 
+body {
+  margin: 0;
+}
+
 header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  min-height: 50px;
   background-color: rgb(71, 71, 71);
   color: white;
   padding: 0 200px 0;

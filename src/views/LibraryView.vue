@@ -27,7 +27,7 @@ function toggleRead(id) {
 
   <div v-else class="books-grid">
     <p class="status-msg">
-      {{ count }} book{{ count > 1 ? 's' : '' }} in your library · {{ readCount }} read
+      {{ count }} book{{ count > 1 ? 's' : '' }} in your library - {{ readCount }} read
     </p>
 
     <article v-for="book in books" :key="book.id" class="book-card line">

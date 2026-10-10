@@ -1,7 +1,9 @@
 <template>
   <header class="line">
     <div>
-      <img class="logo" src="" alt="EfreeLib Logo" />
+      <RouterLink to="/">
+        <img class="logo" src="" alt="EfreeLib Logo" />
+      </RouterLink>
     </div>
     <nav>
       <RouterLink to="/">Home</RouterLink>
