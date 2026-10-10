@@ -50,6 +50,14 @@ function isInLibrary(id) {
 function addToLibrary(book) {
   store.dispatch('addBook', book)
 }
+
+function isRead(id) {
+  return store.getters.isRead(id)
+}
+
+function toggleRead(id) {
+  store.dispatch('toggleRead', id)
+}
 </script>
 
 <template>
@@ -87,9 +95,14 @@ function addToLibrary(book) {
         </div>
       </div>
 
-      <button :disabled="isInLibrary(book.id)" @click="addToLibrary(book)">
-        {{ isInLibrary(book.id) ? 'In library' : 'Add to library' }}
-      </button>
+      <div class="line">
+        <button :disabled="isInLibrary(book.id)" @click="addToLibrary(book)">
+          {{ isInLibrary(book.id) ? 'In library' : 'Add to library' }}
+        </button>
+        <button v-if="isInLibrary(book.id)" @click="toggleRead(book.id)">
+          {{ isRead(book.id) ? 'Mark as unread' : 'Mark as read' }}
+        </button>
+      </div>
 
       <div class="book-description">
         <h3>Description</h3>

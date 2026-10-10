@@ -6,9 +6,14 @@ const store = useStore()
 
 const books = computed(() => store.getters.libraryBooks)
 const count = computed(() => store.getters.libraryCount)
+const readCount = computed(() => store.getters.readCount)
 
 function removeFromLibrary(id) {
   store.dispatch('removeBook', id)
+}
+
+function toggleRead(id) {
+  store.dispatch('toggleRead', id)
 }
 </script>
 
@@ -21,7 +26,9 @@ function removeFromLibrary(id) {
   </p>
 
   <div v-else class="books-grid">
-    <p class="status-msg">{{ count }} book{{ count > 1 ? 's' : '' }} in your library</p>
+    <p class="status-msg">
+      {{ count }} book{{ count > 1 ? 's' : '' }} in your library · {{ readCount }} read
+    </p>
 
     <article v-for="book in books" :key="book.id" class="book-card line">
       <div>
@@ -36,7 +43,12 @@ function removeFromLibrary(id) {
         <p><strong>Author:</strong> {{ book.authors }}</p>
         <p><strong>Year:</strong> {{ book.year }}</p>
         <p>{{ book.description }}</p>
-        <button @click="removeFromLibrary(book.id)">Remove</button>
+        <div class="line">
+          <button @click="toggleRead(book.id)">
+            {{ book.read ? 'Mark as unread' : 'Mark as read' }}
+          </button>
+          <button @click="removeFromLibrary(book.id)">Remove</button>
+        </div>
       </div>
     </article>
   </div>
