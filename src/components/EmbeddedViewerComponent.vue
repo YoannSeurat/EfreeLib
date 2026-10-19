@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import BrandMark from '@/components/BrandMark.vue'
 
 const props = defineProps({
   bookId: {
@@ -66,7 +67,7 @@ function renderViewer() {
   } catch (err) {
     console.error('Failed to initialize Google Books DefaultViewer:', err)
     isLoading.value = false
-    errorMessage.value = 'Failed to load book preview.'
+    errorMessage.value = 'The preview didn’t load. Open the book on Google Books instead.'
   }
 }
 
@@ -85,7 +86,8 @@ function initGoogleBooks() {
         clearInterval(checkInterval)
         checkInterval = null
         isLoading.value = false
-        errorMessage.value = 'Google Books preview service could not be loaded.'
+        errorMessage.value =
+          'The Google Books preview service didn’t load. Check your connection and reload the page.'
       }
     }, 100)
     return
@@ -126,21 +128,33 @@ watch(
 </script>
 
 <template>
-  <div class="embedded-viewer-section">
-    <h3>Book Preview</h3>
+  <section class="details__section" aria-labelledby="preview-title">
+    <h2 id="preview-title" class="details__section-title">Read a sample</h2>
 
-    <div v-if="isLoading" class="viewer-status">
-      Loading interactive preview from Google Books...
+    <div v-if="isLoading" class="el-notice el-notice--loading" role="status">
+      <span class="el-loader"><BrandMark loading /></span>
+      <p>Loading the preview from Google Books…</p>
     </div>
 
-    <div v-if="isNotFound && !isLoading" class="viewer-status">
-      <p>An interactive preview is not embeddable for this book on Google Books.</p>
+    <div v-if="isNotFound && !isLoading" class="el-notice el-notice--empty">
+      <p>Google Books doesn’t allow this book’s preview to be shown here.</p>
+      <a
+        v-if="previewLink"
+        class="el-btn el-btn--outline"
+        :href="previewLink"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Open on Google Books
+      </a>
     </div>
 
-    <div v-if="errorMessage && !isLoading" class="viewer-status">
-      {{ errorMessage }}
+    <div v-if="errorMessage && !isLoading" class="el-notice el-notice--error" role="alert">
+      <p>{{ errorMessage }}</p>
     </div>
 
-    <div v-show="!isNotFound && !errorMessage" ref="viewerCanvasRef" class="viewer-canvas"></div>
-  </div>
+    <div v-show="!isNotFound && !errorMessage" class="viewer-frame">
+      <div ref="viewerCanvasRef" class="viewer-canvas"></div>
+    </div>
+  </section>
 </template>

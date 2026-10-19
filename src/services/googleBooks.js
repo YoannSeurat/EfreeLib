@@ -19,10 +19,7 @@ export function formatBook(item) {
     cover = cover.replace('http://', 'https://')
   }
 
-  // Fallback placeholder if no cover image is provided
-  if (!cover) {
-    cover = 'https://picsum.photos/128/192'
-  }
+  // No cover image: leave it empty so the UI prints a typeset cover instead
 
   // Extract ISBN (prefer ISBN_13, fallback to ISBN_10)
   const isbnObj =

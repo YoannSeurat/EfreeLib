@@ -17,6 +17,8 @@ function saveLibrary(library) {
 const store = createStore({
   state: () => ({
     library: loadLibrary(),
+    // Text in the masthead search field, shared so the Home hero can echo it
+    searchQuery: '',
   }),
 
   getters: {
@@ -25,9 +27,15 @@ const store = createStore({
     isInLibrary: (state) => (id) => state.library.some((book) => book.id === id),
     isRead: (state) => (id) => state.library.find((book) => book.id === id)?.read ?? false,
     readCount: (state) => state.library.filter((book) => book.read).length,
+    isFavorite: (state) => (id) => state.library.find((book) => book.id === id)?.favorite ?? false,
+    favoriteBooks: (state) => state.library.filter((book) => book.favorite),
+    favoriteCount: (state) => state.library.filter((book) => book.favorite).length,
   },
 
   mutations: {
+    SET_SEARCH_QUERY(state, query) {
+      state.searchQuery = query
+    },
     ADD_BOOK(state, book) {
       state.library.push(book)
     },
@@ -36,7 +44,13 @@ const store = createStore({
     },
     SET_READ(state, { id, read }) {
       const book = state.library.find((b) => b.id === id)
-      if (book) book.read = read
+      if (!book) return
+      book.read = read
+      book.readAt = read ? new Date().toISOString() : null
+    },
+    SET_FAVORITE(state, { id, favorite }) {
+      const book = state.library.find((b) => b.id === id)
+      if (book) book.favorite = favorite
     },
   },
 
@@ -50,7 +64,10 @@ const store = createStore({
         year: book.year,
         cover: book.cover,
         description: book.description,
+        categories: book.categories || [],
         read: false,
+        readAt: null,
+        favorite: false,
         addedAt: new Date().toISOString(),
       })
       saveLibrary(state.library)
@@ -62,6 +79,11 @@ const store = createStore({
     toggleRead({ commit, getters, state }, id) {
       if (!getters.isInLibrary(id)) return
       commit('SET_READ', { id, read: !getters.isRead(id) })
+      saveLibrary(state.library)
+    },
+    toggleFavorite({ commit, getters, state }, id) {
+      if (!getters.isInLibrary(id)) return
+      commit('SET_FAVORITE', { id, favorite: !getters.isFavorite(id) })
       saveLibrary(state.library)
     },
   },

@@ -13,6 +13,13 @@ const router = createRouter({
     { path: "/favorites", name: "favorites", component: FavoritesView },
     { path: "/book/:id", name: "book-details", component: BookDetailsView },
   ],
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) return savedPosition;
+    // Leave room for the sticky masthead
+    if (to.hash) return { el: to.hash, top: 120, behavior: "smooth" };
+    if (to.path === from.path) return false;
+    return { top: 0 };
+  },
 });
 
 export default router;

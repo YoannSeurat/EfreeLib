@@ -1,89 +1,115 @@
 <script setup>
-import { ref } from 'vue'
-import { useStore } from 'vuex'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { searchBooks } from '@/services/googleBooks.js'
+import { hasCover } from '@/utils/book.js'
+import MarkHero from '@/components/MarkHero.vue'
+import BookShelf from '@/components/BookShelf.vue'
+import BookCard from '@/components/BookCard.vue'
+import BookCover from '@/components/BookCover.vue'
+import StatusNotice from '@/components/StatusNotice.vue'
+import QuoteBand from '@/components/QuoteBand.vue'
 
-const store = useStore()
+const route = useRoute()
 
-function isInLibrary(id) {
-  return store.getters.isInLibrary(id)
-}
+// The search itself lives in the URL (?q=), set by the masthead field
+const lastQuery = computed(() => (typeof route.query.q === 'string' ? route.query.q.trim() : ''))
+const hasSearched = computed(() => Boolean(lastQuery.value))
 
-function addToLibrary(book) {
-  store.dispatch('addBook', book)
-}
-
-const searchQuery = ref('')
 const books = ref([])
+const totalItems = ref(0)
 const isLoading = ref(false)
 const errorMessage = ref('')
-const hasSearched = ref(false)
 
-async function searchBooks_searchbar() {
-  if (!searchQuery.value.trim()) return
+async function runSearch() {
+  const query = lastQuery.value
+  books.value = []
+  totalItems.value = 0
+  errorMessage.value = ''
+  if (!query) return
 
   isLoading.value = true
-  errorMessage.value = ''
-  hasSearched.value = true
-
   try {
-    const result = await searchBooks(searchQuery.value)
+    const result = await searchBooks(query, 20)
+    if (query !== lastQuery.value) return
     books.value = result.books
+    totalItems.value = result.totalItems
   } catch (e) {
-    errorMessage.value = 'Failed to fetch books. Please try again.\n' + e
-    books.value = []
+    errorMessage.value = `${e.message || 'The request failed'}. Check your connection and search again.`
   } finally {
     isLoading.value = false
   }
 }
+
+watch(lastQuery, runSearch, { immediate: true })
+
+// A shelf of picks shown before the first search
+const picks = ref([])
+
+onMounted(async () => {
+  try {
+    const result = await searchBooks('subject:fiction', 20)
+    picks.value = result.books.filter((book) => hasCover(book.cover)).slice(0, 6)
+  } catch {
+    picks.value = []
+  }
+})
+
+const resultsMeta = computed(() => {
+  const shown = books.value.length
+  return `Showing ${shown} of ${totalItems.value.toLocaleString('en-US')}`
+})
 </script>
 
 <template>
-  <h1>EfreeLib</h1>
+  <section :class="['home-intro', { 'is-compact': hasSearched }]" aria-label="EfreeLib">
+    <MarkHero :compact="hasSearched" />
+    <p class="lede home-lede">
+      Search a few million volumes on Google Books, shelve the ones you want, and stamp them when
+      you finish.
+    </p>
+  </section>
 
-  <div class="line">
-    <label for="search-bar">Search for any book : </label>
+  <StatusNotice v-if="isLoading" kind="loading">
+    Searching the catalogue for “{{ lastQuery }}”…
+  </StatusNotice>
 
-    <input
-      id="search-bar"
-      v-model="searchQuery"
-      type="text"
-      @keydown.enter="searchBooks_searchbar"
-    />
+  <StatusNotice v-else-if="errorMessage" kind="error" title="Google Books didn’t answer">
+    {{ errorMessage }}
+    <template #action>
+      <button class="el-btn" type="button" @click="runSearch">Search again</button>
+    </template>
+  </StatusNotice>
 
-    <button :disabled="isLoading" @click="searchBooks_searchbar">
-      {{ isLoading ? 'Searching...' : 'Search' }}
-    </button>
-  </div>
+  <StatusNotice v-else-if="hasSearched && books.length === 0" kind="empty" title="Nothing matches">
+    No volumes on Google Books match “{{ lastQuery }}”. Check the spelling, or try an author’s
+    surname or an ISBN.
+  </StatusNotice>
 
-  <div id="search-bar-response" class="status-container">
-    <p v-if="isLoading">Searching books...</p>
-    <p v-else-if="errorMessage">{{ errorMessage }}</p>
-    <p v-else-if="hasSearched && books.length === 0">No books found.</p>
-  </div>
+  <BookShelf
+    v-else-if="hasSearched"
+    :title="`Results for ${lastQuery}`"
+    :meta="resultsMeta"
+    layout="grid"
+  >
+    <BookCard v-for="book in books" :key="book.id" :book="book" />
+  </BookShelf>
 
-  <div v-if="books.length > 0" class="books-grid">
-    <article v-for="book in books" :key="book.id" class="book-card line">
-      <div>
-        <RouterLink
-          :to="`/book/${book.id}`"
-          class="book-cover-link"
-          :title="`View details for ${book.title}`"
-        >
-          <img :src="book.cover" :alt="book.title" class="book-cover" />
-        </RouterLink>
-      </div>
-      <div class="book-info">
-        <RouterLink :to="`/book/${book.id}`" class="book-title-link">
-          <h3>{{ book.title }}</h3>
-        </RouterLink>
-        <p><strong>Author:</strong> {{ book.authors }}</p>
-        <p><strong>Year:</strong> {{ book.year }}</p>
-        <p>{{ book.description }}</p>
-        <button :disabled="isInLibrary(book.id)" @click="addToLibrary(book)">
-          {{ isInLibrary(book.id) ? 'In library' : 'Add to library' }}
-        </button>
-      </div>
-    </article>
-  </div>
+  <BookShelf
+    v-else-if="picks.length"
+    title="This month"
+    meta="Fiction on Google Books"
+    layout="row"
+  >
+    <RouterLink
+      v-for="book in picks"
+      :key="book.id"
+      :to="`/book/${book.id}`"
+      :aria-label="`${book.title} by ${book.authors}`"
+    >
+      <BookCover :book="book" riso />
+    </RouterLink>
+  </BookShelf>
+
+  <QuoteBand v-if="!hasSearched" />
 </template>

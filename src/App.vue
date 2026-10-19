@@ -1,20 +1,17 @@
+<script setup>
+import AppMasthead from '@/components/AppMasthead.vue'
+</script>
+
 <template>
-  <header class="line">
-    <div>
-      <RouterLink to="/">
-        <img class="logo" src="" alt="EfreeLib Logo" />
-      </RouterLink>
-    </div>
-    <nav>
-      <RouterLink to="/">Home</RouterLink>
-      <RouterLink to="/library">Library</RouterLink>
-      <RouterLink to="/favorites">Favorites</RouterLink>
-    </nav>
-    <div></div>
-  </header>
-
-
-  <div id="routerview">
-    <RouterView :key="$route.fullPath" />
-  </div>
+  <AppMasthead />
+  <main class="page app-main">
+    <RouterView v-slot="{ Component, route }">
+      <Transition name="page" mode="out-in">
+        <!-- Keyed by path, so a new search (?q=) doesn't replay the page change -->
+        <div :key="route.path" class="page-view">
+          <component :is="Component" />
+        </div>
+      </Transition>
+    </RouterView>
+  </main>
 </template>
