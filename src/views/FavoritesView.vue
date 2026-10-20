@@ -1,12 +1,12 @@
 <script setup>
-import { computed } from "vue";
-import { useStore } from "vuex";
+import { computed } from 'vue'
+import { useStore } from 'vuex'
 
-const store = useStore();
-const favoriteBooks = computed(() => store.getters.favoriteBooks);
+const store = useStore()
+const favoriteBooks = computed(() => store.getters.favoriteBooks)
 
 function toggleFavorite(id) {
-  store.dispatch("toggleFavorite", id);
+  store.dispatch('toggleFavorite', id)
 }
 </script>
 
