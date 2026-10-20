@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { searchBooks, getFeaturedBooks } from '@/services/books.js'
+import { searchBooks } from '@/services/openLibrary.js'
 import { hasCover } from '@/utils/book.js'
 import MarkHero from '@/components/MarkHero.vue'
 import BookShelf from '@/components/BookShelf.vue'
@@ -9,6 +9,9 @@ import BookCard from '@/components/BookCard.vue'
 import BookCover from '@/components/BookCover.vue'
 import StatusNotice from '@/components/StatusNotice.vue'
 import QuoteBand from '@/components/QuoteBand.vue'
+
+const SOURCE_NAME = 'Open Library'
+const PAGE_SIZE = 20
 
 const route = useRoute()
 
@@ -18,9 +21,11 @@ const hasSearched = computed(() => Boolean(lastQuery.value))
 
 const books = ref([])
 const totalItems = ref(0)
-const sourceName = ref('')
 const isLoading = ref(false)
+const isLoadingMore = ref(false)
 const errorMessage = ref('')
+
+const canLoadMore = computed(() => books.value.length > 0 && books.value.length < totalItems.value)
 
 async function runSearch() {
   const query = lastQuery.value
@@ -31,11 +36,10 @@ async function runSearch() {
 
   isLoading.value = true
   try {
-    const result = await searchBooks(query, 20)
+    const result = await searchBooks(query, PAGE_SIZE, 0)
     if (query !== lastQuery.value) return
-    books.value = result.books
+    books.value = result.books.filter(Boolean)
     totalItems.value = result.totalItems
-    sourceName.value = result.sourceName
   } catch (e) {
     errorMessage.value = e.fullMessage || e.message || 'The search failed. Try again.'
   } finally {
@@ -43,17 +47,38 @@ async function runSearch() {
   }
 }
 
+async function loadMoreBooks() {
+  const query = lastQuery.value
+  if (!query || isLoadingMore.value) return
+
+  isLoadingMore.value = true
+  errorMessage.value = ''
+
+  try {
+    const result = await searchBooks(query, PAGE_SIZE, books.value.length)
+    if (query !== lastQuery.value) return
+    const existingIds = new Set(books.value.map((b) => b.id))
+    const newBooks = result.books.filter((b) => b && !existingIds.has(b.id))
+    books.value = [...books.value, ...newBooks]
+    if (result.books.length === 0) {
+      totalItems.value = books.value.length
+    }
+  } catch (e) {
+    errorMessage.value = e.fullMessage || e.message || 'Failed to load more books. Try again.'
+  } finally {
+    isLoadingMore.value = false
+  }
+}
+
 watch(lastQuery, runSearch, { immediate: true })
 
 // A shelf of picks shown before the first search
 const picks = ref([])
-const picksSource = ref('')
 
 onMounted(async () => {
   try {
-    const result = await getFeaturedBooks(24)
-    picks.value = result.books.filter((book) => hasCover(book.cover)).slice(0, 12)
-    picksSource.value = result.sourceName
+    const result = await searchBooks('subject:fiction', 24, 0)
+    picks.value = result.books.filter((book) => book && hasCover(book.cover)).slice(0, 12)
   } catch {
     picks.value = []
   }
@@ -61,7 +86,7 @@ onMounted(async () => {
 
 const resultsMeta = computed(() => {
   const shown = books.value.length
-  return `Showing ${shown} of ${totalItems.value.toLocaleString('en-US')} on ${sourceName.value}`
+  return `Showing ${shown} of ${totalItems.value.toLocaleString('en-US')} on ${SOURCE_NAME}`
 })
 </script>
 
@@ -85,23 +110,31 @@ const resultsMeta = computed(() => {
   </StatusNotice>
 
   <StatusNotice v-else-if="hasSearched && books.length === 0" kind="empty" title="Nothing matches">
-    No volumes match “{{ lastQuery }}” on {{ sourceName }}. Check the spelling, or try an author’s
+    No volumes match “{{ lastQuery }}” on {{ SOURCE_NAME }}. Check the spelling, or try an author’s
     surname or an ISBN.
   </StatusNotice>
 
-  <BookShelf
-    v-else-if="hasSearched"
-    :title="`Results for ${lastQuery}`"
-    :meta="resultsMeta"
-    layout="grid"
-  >
-    <BookCard v-for="book in books" :key="book.id" :book="book" />
-  </BookShelf>
+  <template v-else-if="hasSearched">
+    <BookShelf :title="`Results for ${lastQuery}`" :meta="resultsMeta" layout="grid">
+      <BookCard v-for="book in books" :key="book.id" :book="book" />
+    </BookShelf>
+
+    <div v-if="canLoadMore" class="home-more">
+      <button
+        class="el-btn el-btn--outline"
+        type="button"
+        :disabled="isLoadingMore"
+        @click="loadMoreBooks"
+      >
+        {{ isLoadingMore ? 'Loading more…' : 'Load more volumes' }}
+      </button>
+    </div>
+  </template>
 
   <BookShelf
     v-else-if="picks.length"
-    title="This month"
-    :meta="`Trending on ${picksSource}`"
+    title="Featured shelf"
+    :meta="`Catalogue picks on ${SOURCE_NAME}`"
     layout="row"
   >
     <RouterLink

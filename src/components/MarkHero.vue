@@ -14,8 +14,10 @@ defineProps({
 
 const store = useStore()
 
-const query = computed(() => store.state.searchQuery.trim())
-const toRead = computed(() => store.getters.libraryCount - store.getters.readCount)
+const query = computed(() => (store.state.searchQuery || '').trim())
+const toRead = computed(
+  () => store.getters.unreadCount ?? store.getters.libraryCount - store.getters.readCount,
+)
 const read = computed(() => store.getters.readCount)
 
 // Index of the hovered or focused line, -1 when none

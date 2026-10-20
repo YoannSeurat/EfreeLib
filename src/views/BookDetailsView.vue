@@ -2,8 +2,7 @@
 import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
-import { getBookById } from '@/services/books.js'
-import { isOpenLibraryId } from '@/services/openLibrary.js'
+import { getBookById } from '@/services/openLibrary.js'
 import EmbeddedViewerComponent from '@/components/EmbeddedViewerComponent.vue'
 import BookCover from '@/components/BookCover.vue'
 import CatalogCard from '@/components/CatalogCard.vue'
@@ -17,32 +16,36 @@ const store = useStore()
 const book = ref(null)
 const isLoading = ref(true)
 const errorMessage = ref('')
+const noteDraft = ref('')
 
 async function fetchBookDetails() {
-  const bookId = route.params.id
-  if (!bookId) return
+  const rawId = route.params.id
+  if (!rawId) return
+  const bookId = String(rawId).replace(/^ol:/, '')
 
   isLoading.value = true
   errorMessage.value = ''
 
   try {
     book.value = await getBookById(bookId)
+    noteDraft.value = store.getters.getBookNote(book.value?.id || bookId)
   } catch (error) {
     // The catalogue is out of reach, but a book on the shelf still has its own copy
-    const copy = store.getters.libraryBooks.find((b) => b.id === bookId)
+    const copy = store.getters.libraryBooks.find((b) => b.id === bookId || b.id === rawId)
     if (copy) {
       book.value = {
         subtitle: '',
         isbn: '',
+        iaId: '',
         publisher: '',
         pageCount: null,
         language: '',
         averageRating: null,
         ratingsCount: 0,
-        previewLink: '',
-        sourceName: isOpenLibraryId(bookId) ? 'Open Library' : 'Google Books',
+        previewLink: `https://openlibrary.org/works/${bookId}`,
         ...copy,
       }
+      noteDraft.value = store.getters.getBookNote(copy.id)
     } else {
       book.value = null
       errorMessage.value = error.fullMessage || error.message || 'The book could not be loaded.'
@@ -69,9 +72,22 @@ const saved = computed(() =>
 const inLibrary = computed(() => Boolean(saved.value))
 const isRead = computed(() => saved.value?.read ?? false)
 const isFavorite = computed(() => saved.value?.favorite ?? false)
+const personalRating = computed(() => (book.value ? store.getters.getBookRating(book.value.id) : 0))
+
+const descriptionParagraphs = computed(() => {
+  const raw = book.value?.description || 'No description available.'
+  const body = String(raw).split(/\r?\n\s*-{4,}/)[0]
+  const parts = body
+    .split(/\r?\n\s*\r?\n/)
+    .map((p) => p.replace(/\s*\r?\n\s*/g, ' ').trim())
+    .filter(Boolean)
+  return parts.length ? parts : ['No description available.']
+})
 
 function addToLibrary() {
+  if (!book.value) return
   store.dispatch('addBook', book.value)
+  noteDraft.value = store.getters.getBookNote(book.value.id)
 }
 
 function toggleRead() {
@@ -84,6 +100,18 @@ function toggleFavorite() {
 
 function removeFromLibrary() {
   store.dispatch('removeBook', book.value.id)
+}
+
+function setRating(star) {
+  if (!book.value) return
+  store.dispatch('setRating', { id: book.value.id, rating: star })
+}
+
+function saveNote() {
+  if (!book.value) return
+  const trimmed = noteDraft.value.trim()
+  noteDraft.value = trimmed
+  store.dispatch('setNote', { id: book.value.id, note: trimmed })
 }
 </script>
 
@@ -133,6 +161,40 @@ function removeFromLibrary() {
             </Transition>
           </div>
 
+          <div v-if="inLibrary" class="details__personal" aria-label="Personal notes and rating">
+            <div class="details__rating">
+              <span class="details__section-title">Your rating</span>
+              <div class="el-stars" role="group" aria-label="Rate this book from 1 to 5 stars">
+                <button
+                  v-for="star in 5"
+                  :key="star"
+                  type="button"
+                  :class="['el-star-btn', { 'is-active': star <= personalRating }]"
+                  :aria-label="`Rate ${star} out of 5`"
+                  :aria-pressed="star <= personalRating ? 'true' : 'false'"
+                  @click="setRating(star)"
+                >
+                  {{ star <= personalRating ? '★' : '☆' }}
+                </button>
+                <span v-if="personalRating" class="label">{{ personalRating }} / 5</span>
+              </div>
+            </div>
+
+            <form class="details__note" @submit.prevent="saveNote">
+              <label class="details__section-title" for="book-personal-note">Personal note</label>
+              <div class="details__note-row">
+                <input
+                  id="book-personal-note"
+                  v-model="noteDraft"
+                  type="text"
+                  class="el-input"
+                  placeholder="Write a personal note or review…"
+                />
+                <button class="el-btn el-btn--outline" type="submit">Save note</button>
+              </div>
+            </form>
+          </div>
+
           <CatalogCard :book="book" />
         </div>
 
@@ -147,23 +209,24 @@ function removeFromLibrary() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            Open on {{ book.sourceName || 'Google Books' }}
+            Open on Open Library
           </a>
         </div>
       </div>
 
       <section class="details__section" aria-labelledby="about-title">
         <h2 id="about-title" class="details__section-title">About this book</h2>
-        <!-- Descriptions arrive as simple HTML: Google's own, or Open Library text escaped in the service -->
-        <div class="details__description body" v-html="book.description"></div>
+        <div class="details__description body">
+          <p v-for="(paragraph, idx) in descriptionParagraphs" :key="idx">{{ paragraph }}</p>
+        </div>
       </section>
 
       <EmbeddedViewerComponent
-        :book-id="isOpenLibraryId(book.id) ? '' : book.id"
+        :book-id="book.id"
         :isbn="book.isbn"
-        :other-isbns="book.otherIsbns || []"
+        :ia-id="book.iaId || ''"
         :preview-link="book.previewLink"
-        :source-name="book.sourceName || 'Google Books'"
+        source-name="Open Library"
       />
     </template>
   </div>

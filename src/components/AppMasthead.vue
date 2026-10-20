@@ -24,7 +24,7 @@ const links = computed(() => [
 const currentIndex = computed(() => links.value.findIndex((link) => link.to === route.path))
 
 const query = computed({
-  get: () => store.state.searchQuery,
+  get: () => store.state.searchQuery || '',
   set: (value) => store.commit('SET_SEARCH_QUERY', value),
 })
 
