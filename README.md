@@ -2,11 +2,35 @@
 
 **EfreeLib** is a Vue.js web application for searching millions of books via the Open Library API, curating a personal library, tracking reading progress with dated library stamps, managing favourites, and recording personal ratings and notes.
 
----
+[> Click here to go to Figma design](https://www.figma.com/design/xLFk4IKKQ5vvfk0K4B90O0/EfreeLib-UX-Design?node-id=0-1&t=eJYVj1eFCIXoA1GP-1)
+
+## Installation & Setup Instructions
+
+### Prerequisites
+
+- **Node.js** `^22.18.0` or `>=24.12.0`
+- **npm** or **pnpm**
+
+### Install dependencies
+
+```bash
+npm install
+# or with pnpm:
+pnpm install
+```
+
+### Start the development server
+
+```bash
+npm run dev
+```
+
+Open the local URL shown in the terminal (default: `http://localhost:5173`).
 
 ## Features
 
 ### Core Features
+
 - **Catalogue Search (`/`)**:
   - Search books by title, author, keyword, or ISBN via the Open Library Search API.
   - Displays book **title**, **author**, **publication year**, and **cover image** (with an automatic typeset cover fallback when no cover exists).
@@ -23,6 +47,7 @@
   - Library items, reading status, read timestamps, favourites, personal ratings, personal notes, and theme preference (`light` / `dark`) are automatically persisted in `localStorage`.
 
 ### Advanced Features
+
 - **Library Statistics & Visual Reading Dial**:
   - Displays total shelved books, read count, remaining (to read) count, favourites count, and average personal rating (`Avg X / 5 ★`), accompanied by the interactive SVG `ReadingDial` progress meter.
 - **Filters, Search & Sorting in Library**:
@@ -38,8 +63,6 @@
 - **Better API & UI/UX Experience**:
   - Animated SVG loading states, error notices with retry actions, empty states for Search, Library, and Favourites, **"Load more volumes"** pagination, **Light / Dark mode toggle** in the masthead, and **toast notifications** when shelving, removing, or saving notes.
 
----
-
 ## Tech Stack
 
 - **Framework**: [Vue 3](https://vuejs.org/) (Composition API with `<script setup>`)
@@ -48,8 +71,6 @@
 - **Build Tool**: [Vite 8](https://vite.dev/)
 - **Linting & Formatting**: `oxlint`, `eslint` (`eslint-plugin-vue`), and `oxfmt`
 - **Persistence**: Browser `localStorage`
-
----
 
 ## External API Used
 
@@ -67,8 +88,6 @@ This project uses the **Open Library API** (free, open, no API key required):
 4. **Internet Archive / Open Library BookReader Embed**
    - `https://archive.org/embed/{iaId}`
    - Used in [`EmbeddedViewerComponent.vue`](src/components/EmbeddedViewerComponent.vue) to embed an interactive book preview on `/book/:id`.
-
----
 
 ## Project Structure
 
@@ -108,50 +127,4 @@ src/
 ├── App.vue                         # Root shell with masthead, toast notifications, and router view
 ├── main.js                         # App entry point
 └── style.css                       # Global layout and page styles
-```
-
----
-
-## Installation & Setup Instructions
-
-### Prerequisites
-
-- **Node.js** `^22.18.0` or `>=24.12.0`
-- **npm** or **pnpm**
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/YoannSeurat/EfreeLib.git
-cd EfreeLib
-```
-
-### 2. Install dependencies
-
-```bash
-npm install
-# or with pnpm:
-pnpm install
-```
-
-### 3. Start the development server
-
-```bash
-npm run dev
-```
-
-Open the local URL shown in the terminal (default: `http://localhost:5173`).
-
-### 4. Build and preview for production
-
-```bash
-npm run build
-npm run preview
-```
-
-### 5. Lint and format
-
-```bash
-npm run lint
-npm run format
 ```
