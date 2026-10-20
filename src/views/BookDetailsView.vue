@@ -1,9 +1,13 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useStore } from 'vuex'
 import { getBookById } from '@/services/openLibrary.js'
 import EmbeddedViewerComponent from '@/components/EmbeddedViewerComponent.vue'
-import { useStore } from 'vuex'
+import BookCover from '@/components/BookCover.vue'
+import CatalogCard from '@/components/CatalogCard.vue'
+import ReadStamp from '@/components/ReadStamp.vue'
+import StatusNotice from '@/components/StatusNotice.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -15,19 +19,42 @@ const errorMessage = ref('')
 const noteDraft = ref('')
 
 async function fetchBookDetails() {
-  const bookId = route.params.id
-  if (!bookId) return
+  const rawId = route.params.id
+  if (!rawId) return
+  const bookId = String(rawId).replace(/^ol:/, '')
 
   isLoading.value = true
   errorMessage.value = ''
 
+  const shelvedCopy = store.getters.libraryBooks.find((b) => b.id === bookId || b.id === rawId)
+
   try {
-    const data = await getBookById(bookId)
-    book.value = data
-    noteDraft.value = store.getters.getBookNote(bookId)
+    const fetched = await getBookById(bookId)
+    if (shelvedCopy?.authors && (!fetched.authors || fetched.authors === 'Unknown Author')) {
+      fetched.authors = shelvedCopy.authors
+    }
+    book.value = fetched
+    noteDraft.value = store.getters.getBookNote(book.value?.id || bookId)
   } catch (error) {
-    errorMessage.value =
-      'Failed to load book details. Please try again. ' + (error.message || error)
+    // The catalogue is out of reach, but a book on the shelf still has its own copy
+    if (shelvedCopy) {
+      book.value = {
+        subtitle: '',
+        isbn: '',
+        iaId: '',
+        publisher: '',
+        pageCount: null,
+        language: '',
+        averageRating: null,
+        ratingsCount: 0,
+        previewLink: `https://openlibrary.org/works/${bookId}`,
+        ...shelvedCopy,
+      }
+      noteDraft.value = store.getters.getBookNote(shelvedCopy.id)
+    } else {
+      book.value = null
+      errorMessage.value = error.fullMessage || error.message || 'The book could not be loaded.'
+    }
   } finally {
     isLoading.value = false
   }
@@ -44,130 +71,177 @@ watch(
   },
 )
 
-function isInLibrary(id) {
-  return store.getters.isInLibrary(id)
+const saved = computed(() =>
+  book.value ? store.getters.libraryBooks.find((b) => b.id === book.value.id) : null,
+)
+const inLibrary = computed(() => Boolean(saved.value))
+const isRead = computed(() => saved.value?.read ?? false)
+const isFavorite = computed(() => saved.value?.favorite ?? false)
+const personalRating = computed(() => (book.value ? store.getters.getBookRating(book.value.id) : 0))
+
+const descriptionParagraphs = computed(() => {
+  const raw = book.value?.description || 'No description available.'
+  const body = String(raw).split(/\r?\n\s*-{4,}/)[0]
+  const parts = body
+    .split(/\r?\n\s*\r?\n/)
+    .map((p) => p.replace(/\s*\r?\n\s*/g, ' ').trim())
+    .filter(Boolean)
+  return parts.length ? parts : ['No description available.']
+})
+
+function goBack() {
+  if (window.history.state?.back) {
+    router.back()
+  } else {
+    router.push('/')
+  }
 }
 
-function addToLibrary(bookItem) {
-  store.dispatch('addBook', bookItem)
+function addToLibrary() {
+  if (!book.value) return
+  store.dispatch('addBook', book.value)
+  noteDraft.value = store.getters.getBookNote(book.value.id)
 }
 
-function isRead(id) {
-  return store.getters.isRead(id)
+function toggleRead() {
+  store.dispatch('toggleRead', book.value.id)
 }
 
-function toggleRead(id) {
-  store.dispatch('toggleRead', id)
+function toggleFavorite() {
+  store.dispatch('toggleFavorite', book.value.id)
 }
 
-function isFavorite(id) {
-  return store.getters.isFavorite(id)
+function removeFromLibrary() {
+  if (!book.value) return
+  const confirmed = window.confirm(
+    `Are you sure you want to remove "${book.value.title}" from your library?`,
+  )
+  if (!confirmed) return
+  store.dispatch('removeBook', book.value.id)
 }
 
-function toggleFavorite(id) {
-  store.dispatch('toggleFavorite', id)
+function setRating(star) {
+  if (!book.value) return
+  store.dispatch('setRating', { id: book.value.id, rating: star })
 }
 
-function getRating(id) {
-  return store.getters.getBookRating(id)
-}
-
-function setRating(id, rating) {
-  store.dispatch('setRating', { id, rating })
-}
-
-function saveNote(id) {
-  store.dispatch('setNote', { id, note: noteDraft.value.trim() })
+function saveNote() {
+  if (!book.value) return
+  const trimmed = noteDraft.value.trim()
+  noteDraft.value = trimmed
+  store.dispatch('setNote', { id: book.value.id, note: trimmed })
 }
 </script>
 
 <template>
-  <div class="book-details-page">
-    <button class="back-btn" @click="router.back()">← Back</button>
+  <div class="details">
+    <button class="el-btn el-btn--quiet details__back" type="button" @click="goBack">Back</button>
 
-    <div v-if="isLoading" class="status-msg">Loading book details...</div>
-    <div v-else-if="errorMessage" class="status-msg error-msg">{{ errorMessage }}</div>
+    <StatusNotice v-if="isLoading" kind="loading">Fetching the catalogue card…</StatusNotice>
 
-    <div v-else-if="book" class="book-details">
-      <div class="book-header">
-        <img :src="book.cover" :alt="book.title" class="details-cover" />
-        <div class="header-info">
-          <h2>{{ book.title }}</h2>
-          <p v-if="book.subtitle" class="book-subtitle">
-            <em>{{ book.subtitle }}</em>
-          </p>
-          <p><strong>Author(s):</strong> {{ book.authors }}</p>
-          <p><strong>Published:</strong> {{ book.year }}</p>
-          <p v-if="book.publisher"><strong>Publisher:</strong> {{ book.publisher }}</p>
-          <p v-if="book.pageCount"><strong>Pages:</strong> {{ book.pageCount }}</p>
-          <p v-if="book.language"><strong>Language:</strong> {{ book.language.toUpperCase() }}</p>
-          <p v-if="book.categories?.length">
-            <strong>Categories:</strong> {{ book.categories.join(', ') }}
-          </p>
-          <p v-if="book.isbn"><strong>ISBN:</strong> {{ book.isbn }}</p>
-          <p v-if="book.averageRating">
-            <strong>Rating:</strong> {{ book.averageRating }} / 5 ({{ book.ratingsCount }} reviews)
-          </p>
-          <p v-if="book.previewLink" class="view-open-library">
-            <a :href="book.previewLink" target="_blank" rel="noopener noreferrer">
-              View on Open Library ↗
-            </a>
-          </p>
+    <StatusNotice v-else-if="errorMessage" kind="error" title="This book didn’t load">
+      {{ errorMessage }}
+      <template #action>
+        <button class="el-btn" type="button" @click="fetchBookDetails">Try again</button>
+      </template>
+    </StatusNotice>
+
+    <template v-else-if="book">
+      <div class="details__grid">
+        <div class="details__main">
+          <h1 class="details__title spine-l">{{ book.title }}</h1>
+          <p v-if="book.subtitle" class="details__subtitle">{{ book.subtitle }}</p>
+          <p class="details__byline byline">{{ book.authors }}</p>
+
+          <div class="details__actions">
+            <button v-if="!inLibrary" class="el-btn" type="button" @click="addToLibrary">
+              Shelve
+            </button>
+            <template v-else>
+              <button class="el-btn" type="button" @click="toggleRead">
+                {{ isRead ? 'Mark as unread' : 'Mark as read' }}
+              </button>
+              <button
+                class="el-ring-btn"
+                type="button"
+                :aria-pressed="isFavorite ? 'true' : 'false'"
+                :aria-label="isFavorite ? 'Remove from favourites' : 'Add to favourites'"
+                @click="toggleFavorite"
+              ></button>
+              <button class="el-btn el-btn--quiet" type="button" @click="removeFromLibrary">
+                Remove from shelf
+              </button>
+            </template>
+            <Transition name="stamp">
+              <ReadStamp v-if="isRead" :read-at="saved?.readAt || ''" />
+            </Transition>
+          </div>
+
+          <div v-if="inLibrary" class="details__personal" aria-label="Personal notes and rating">
+            <div class="details__rating">
+              <span class="details__section-title">Your rating</span>
+              <div class="el-stars" role="group" aria-label="Rate this book from 1 to 5 stars">
+                <button
+                  v-for="star in 5"
+                  :key="star"
+                  type="button"
+                  :class="['el-star-btn', { 'is-active': star <= personalRating }]"
+                  :aria-label="`Rate ${star} out of 5`"
+                  :aria-pressed="star <= personalRating ? 'true' : 'false'"
+                  @click="setRating(star)"
+                >
+                  {{ star <= personalRating ? '★' : '☆' }}
+                </button>
+                <span v-if="personalRating" class="label">{{ personalRating }} / 5</span>
+              </div>
+            </div>
+
+            <form class="details__note" @submit.prevent="saveNote">
+              <label class="details__section-title" for="book-personal-note">Personal note</label>
+              <div class="details__note-row">
+                <input
+                  id="book-personal-note"
+                  v-model="noteDraft"
+                  type="text"
+                  class="el-input"
+                  placeholder="Write a personal note or review…"
+                />
+                <button class="el-btn el-btn--outline" type="submit">Save note</button>
+              </div>
+            </form>
+          </div>
+
+          <CatalogCard :book="book" />
         </div>
-      </div>
 
-      <div class="line">
-        <button :disabled="isInLibrary(book.id)" @click="addToLibrary(book)">
-          {{ isInLibrary(book.id) ? 'In library' : 'Add to library' }}
-        </button>
-        <button v-if="isInLibrary(book.id)" @click="toggleRead(book.id)">
-          {{ isRead(book.id) ? 'Mark as unread' : 'Mark as read' }}
-        </button>
-        <button v-if="isInLibrary(book.id)" @click="toggleFavorite(book.id)">
-          {{ isFavorite(book.id) ? 'Remove from favorites' : 'Add to favorites' }}
-        </button>
-      </div>
-
-      <div v-if="isInLibrary(book.id)" class="personal-feedback">
-        <div class="rating-row line">
-          <strong>Your rating:</strong>
-          <button
-            v-for="star in 5"
-            :key="star"
-            type="button"
-            class="star-btn"
-            :title="`Rate ${star} out of 5`"
-            @click="setRating(book.id, star)"
+        <div class="details__aside">
+          <div class="details__stand">
+            <BookCover :book="book" large />
+          </div>
+          <a
+            v-if="book.previewLink"
+            class="label"
+            :href="book.previewLink"
+            target="_blank"
+            rel="noopener noreferrer"
           >
-            {{ star <= getRating(book.id) ? '★' : '☆' }}
-          </button>
-          <span v-if="getRating(book.id)">{{ getRating(book.id) }} / 5</span>
-        </div>
-
-        <div class="note-row line">
-          <input
-            v-model="noteDraft"
-            type="text"
-            class="note-input"
-            placeholder="Write a personal note or review..."
-            @keydown.enter="saveNote(book.id)"
-          />
-          <button type="button" @click="saveNote(book.id)">Save note</button>
+            Open on Open Library
+          </a>
         </div>
       </div>
 
-      <div class="book-description">
-        <h3>Description</h3>
-        <div class="description-text" v-html="book.descriptionHtml || book.description"></div>
-      </div>
+      <section class="details__section" aria-labelledby="about-title">
+        <h2 id="about-title" class="details__section-title">About this book</h2>
+        <div class="details__description body">
+          <p v-for="(paragraph, idx) in descriptionParagraphs" :key="idx">{{ paragraph }}</p>
+        </div>
+      </section>
 
-      <!-- Embedded Open Library Viewer -->
       <EmbeddedViewerComponent
-        :book-id="book.id"
-        :isbn="book.isbn"
-        :ia-id="book.iaId"
+        :ia-id="book.iaId || ''"
         :preview-link="book.previewLink"
+        source-name="Open Library"
       />
-    </div>
+    </template>
   </div>
 </template>

@@ -21,7 +21,9 @@ const SEARCH_FIELDS = [
 
 function stripHtml(html) {
   if (!html) return ''
-  const doc = new DOMParser().parseFromString(html, 'text/html')
+  const str = String(html)
+  if (!/<[a-z][\s\S]*>/i.test(str)) return str
+  const doc = new DOMParser().parseFromString(str, 'text/html')
   return doc.body.textContent || ''
 }
 
@@ -152,7 +154,7 @@ export async function getBookById(workId) {
   try {
     const [workRes, searchRes] = await Promise.all([
       fetch(`${OPEN_LIBRARY_WORKS_URL}/${cleanId}.json`),
-      fetch(`${OPEN_LIBRARY_SEARCH_URL}?${searchParams.toString()}`),
+      fetch(`${OPEN_LIBRARY_SEARCH_URL}?${searchParams.toString()}`).catch(() => null),
     ])
 
     if (!workRes.ok) {
@@ -160,7 +162,7 @@ export async function getBookById(workId) {
     }
 
     const workDetails = await workRes.json()
-    const searchData = searchRes.ok ? await searchRes.json() : null
+    const searchData = searchRes?.ok ? await searchRes.json().catch(() => null) : null
     const doc = searchData?.docs?.[0] || null
 
     return formatBook(doc, workDetails)

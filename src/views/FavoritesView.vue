@@ -1,40 +1,30 @@
 <script setup>
 import { computed } from 'vue'
 import { useStore } from 'vuex'
+import BookShelf from '@/components/BookShelf.vue'
+import BookCard from '@/components/BookCard.vue'
+import StatusNotice from '@/components/StatusNotice.vue'
 
 const store = useStore()
-const favoriteBooks = computed(() => store.getters.favoriteBooks)
 
-function toggleFavorite(id) {
-  store.dispatch('toggleFavorite', id)
-}
+const favorites = computed(() => store.getters.favoriteBooks)
+const count = computed(() => store.getters.favoriteCount)
 </script>
 
 <template>
-  <h1>Favorites</h1>
+  <header class="page-head">
+    <h1 class="page-head__title spine-xl">Favourites</h1>
+    <p class="page-head__aside label">{{ count }} favourite{{ count === 1 ? '' : 's' }}</p>
+  </header>
 
-  <p v-if="favoriteBooks.length === 0" class="status-msg">
-    You have no favorite books yet.
-    <RouterLink to="/library" class="inline-link">View your library</RouterLink>
-    to add some.
-  </p>
+  <StatusNotice v-if="count === 0" kind="empty" title="No favourites yet">
+    Press the ring beside a book on your shelf to add it here.
+    <template #action>
+      <RouterLink to="/library" class="el-btn el-btn--outline">Go to your library</RouterLink>
+    </template>
+  </StatusNotice>
 
-  <div v-else class="books-grid">
-    <article v-for="book in favoriteBooks" :key="book.id" class="book-card line">
-      <div>
-        <RouterLink :to="`/book/${book.id}`" :title="`View details for ${book.title}`">
-          <img :src="book.cover" :alt="book.title" class="book-cover" />
-        </RouterLink>
-      </div>
-      <div class="book-info">
-        <RouterLink :to="`/book/${book.id}`" class="book-title-link">
-          <h3>{{ book.title }}</h3>
-        </RouterLink>
-        <p><strong>Author:</strong> {{ book.authors }}</p>
-        <p><strong>Year:</strong> {{ book.year }}</p>
-        <p>{{ book.description }}</p>
-        <button @click="toggleFavorite(book.id)">Remove from favorites</button>
-      </div>
-    </article>
-  </div>
+  <BookShelf v-else title="Kept close" :meta="`${count} on this shelf`">
+    <BookCard v-for="book in favorites" :key="book.id" :book="book" />
+  </BookShelf>
 </template>

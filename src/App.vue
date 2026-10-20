@@ -1,51 +1,28 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useStore } from 'vuex'
+import AppMasthead from '@/components/AppMasthead.vue'
 
 const store = useStore()
 const toastMessage = computed(() => store.getters.toastMessage)
-
-const isDarkMode = ref(localStorage.getItem('efreelib-dark-mode') === 'true')
-
-function applyTheme() {
-  document.body.classList.toggle('dark-mode', isDarkMode.value)
-}
-
-function toggleDarkMode() {
-  isDarkMode.value = !isDarkMode.value
-  localStorage.setItem('efreelib-dark-mode', String(isDarkMode.value))
-  applyTheme()
-}
-
-onMounted(() => {
-  applyTheme()
-})
 </script>
 
 <template>
-  <header class="line">
-    <div>
-      <RouterLink to="/">
-        <img class="logo" src="" alt="EfreeLib Logo" />
-      </RouterLink>
+  <AppMasthead />
+  <Transition name="tick">
+    <div v-if="toastMessage" class="el-toast" role="status" aria-live="polite">
+      <span class="el-ring el-ring--pink" aria-hidden="true"></span>
+      <span>{{ toastMessage }}</span>
     </div>
-    <nav>
-      <RouterLink to="/">Home</RouterLink>
-      <RouterLink to="/library">Library</RouterLink>
-      <RouterLink to="/favorites">Favorites</RouterLink>
-    </nav>
-    <div>
-      <button class="theme-toggle-btn" @click="toggleDarkMode">
-        {{ isDarkMode ? '☀️ Light' : '🌙 Dark' }}
-      </button>
-    </div>
-  </header>
-
-  <div v-if="toastMessage" class="toast-notification" role="status">
-    {{ toastMessage }}
-  </div>
-
-  <div id="routerview">
-    <RouterView :key="$route.fullPath" />
-  </div>
+  </Transition>
+  <main class="page app-main">
+    <RouterView v-slot="{ Component, route }">
+      <Transition name="page" mode="out-in">
+        <!-- Keyed by path, so a new search (?q=) doesn't replay the page change -->
+        <div :key="route.path" class="page-view">
+          <component :is="Component" />
+        </div>
+      </Transition>
+    </RouterView>
+  </main>
 </template>

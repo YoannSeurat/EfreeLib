@@ -4,12 +4,15 @@ const STORAGE_KEY = 'efreelib-library'
 
 function stripHtmlTags(text) {
   if (!text) return ''
-  return String(text).replace(/<[^>]*>/g, '')
+  const str = String(text)
+  if (!/<[a-z][\s\S]*>/i.test(str)) return str
+  return str.replace(/<[^>]*>/g, '')
 }
 
 function loadLibrary() {
   try {
-    const items = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY))
+    const items = Array.isArray(parsed) ? parsed : []
     return items.map((book) => ({
       ...book,
       description: stripHtmlTags(book.description),
@@ -31,6 +34,7 @@ const store = createStore({
   state: () => ({
     library: loadLibrary(),
     toastMessage: '',
+    searchQuery: '',
   }),
 
   getters: {
@@ -55,6 +59,9 @@ const store = createStore({
   },
 
   mutations: {
+    SET_SEARCH_QUERY(state, query) {
+      state.searchQuery = query
+    },
     ADD_BOOK(state, book) {
       state.library.push(book)
     },
@@ -63,7 +70,9 @@ const store = createStore({
     },
     SET_READ(state, { id, read }) {
       const book = state.library.find((b) => b.id === id)
-      if (book) book.read = read
+      if (!book) return
+      book.read = read
+      book.readAt = read ? new Date().toISOString() : null
     },
     SET_FAVORITE(state, { id, favorite }) {
       const book = state.library.find((b) => b.id === id)
@@ -95,11 +104,22 @@ const store = createStore({
       commit('ADD_BOOK', {
         id: book.id,
         title: book.title,
+        subtitle: book.subtitle || '',
         authors: book.authors,
         year: book.year,
         cover: book.cover,
         description: stripHtmlTags(book.description),
+        categories: book.categories || [],
+        isbn: book.isbn || '',
+        iaId: book.iaId || '',
+        publisher: book.publisher || '',
+        pageCount: book.pageCount || null,
+        language: book.language || '',
+        averageRating: book.averageRating ?? null,
+        ratingsCount: book.ratingsCount || 0,
+        previewLink: book.previewLink || '',
         read: false,
+        readAt: null,
         favorite: false,
         rating: 0,
         note: '',
