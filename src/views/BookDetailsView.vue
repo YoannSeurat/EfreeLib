@@ -110,7 +110,7 @@ function toggleFavorite(id) {
         <button v-if="isInLibrary(book.id)" @click="toggleRead(book.id)">
           {{ isRead(book.id) ? "Mark as unread" : "Mark as read" }}
         </button>
-        <button v-if="isFavorite(book.id)" @click="toggleFavorite(book.id)">
+        <button v-if="isInLibrary(book.id)" @click="toggleFavorite(book.id)">
           {{ isFavorite(book.id) ? "Remove from favorites" : "Add to favorites" }}
         </button>
       </div>
