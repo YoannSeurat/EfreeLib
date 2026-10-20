@@ -15,10 +15,6 @@ defineProps({
 const store = useStore()
 
 const query = computed(() => (store.state.searchQuery || '').trim())
-const toRead = computed(
-  () => store.getters.unreadCount ?? store.getters.libraryCount - store.getters.readCount,
-)
-const read = computed(() => store.getters.readCount)
 
 // Index of the hovered or focused line, -1 when none
 const active = ref(-1)
@@ -53,7 +49,7 @@ function focusSearch() {
     @mouseleave="active = -1"
   >
     <BrandMark spin draw :rings-on="active >= 0 ? [active] : []" />
-    <h1 class="sr-only">EfreeLib: search, shelve, read</h1>
+    <h1 class="sr-only">EfreeLib: search, library, favourites</h1>
     <nav class="el-hero__lines" aria-label="Start here">
       <button
         type="button"
@@ -75,35 +71,23 @@ function focusSearch() {
       </button>
 
       <RouterLink
-        to="/library#to-read"
+        to="/library"
         class="el-hero__line"
         @mouseenter="active = 1"
         @focus="active = 1"
         @blur="active = -1"
       >
-        <span class="el-hero__word"><span>Shelve</span></span>
-        <span class="el-hero__count">
-          <Transition name="tick" mode="out-in">
-            <span :key="toRead">{{ toRead }}</span>
-          </Transition>
-          to read
-        </span>
+        <span class="el-hero__word"><span>Library</span></span>
       </RouterLink>
 
       <RouterLink
-        to="/library#read"
-        class="el-hero__line el-hero__line--last"
+        to="/favorites"
+        class="el-hero__line"
         @mouseenter="active = 2"
         @focus="active = 2"
         @blur="active = -1"
       >
-        <span class="el-hero__word"><span>Read</span></span>
-        <span class="el-hero__count">
-          <Transition name="tick" mode="out-in">
-            <span :key="read">{{ read }}</span>
-          </Transition>
-          finished
-        </span>
+        <span class="el-hero__word"><span>Favourites</span></span>
       </RouterLink>
     </nav>
   </div>

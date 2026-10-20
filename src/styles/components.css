@@ -980,17 +980,10 @@ a:focus-visible .el-cover--riso img {
     transform 260ms cubic-bezier(0.3, 0.7, 0.2, 1),
     color 160ms ease;
 }
-.el-hero__line--last .el-hero__word > span {
-  color: var(--index-blue);
-}
 .el-hero__line:hover .el-hero__word > span,
 .el-hero__line:focus-visible .el-hero__word > span {
   color: var(--index-blue);
   transform: translateX(1.2cqi);
-}
-.el-hero__line--last:hover .el-hero__word > span,
-.el-hero__line--last:focus-visible .el-hero__word > span {
-  color: var(--ink);
 }
 .el-hero__echo {
   color: var(--index-blue);
