@@ -2,8 +2,6 @@
 
 **EfreeLib** is a Vue.js web application for searching books via the Open Library API, managing a personal book library, tracking reading status, curating favorites, and adding personal ratings and notes.
 
----
-
 ## Features
 
 - **Book Search (API Integration)**: Search for books by title, author, or keyword with loading indicators, error handling, empty states, duplicate prevention, and **Load more** pagination.
@@ -18,8 +16,6 @@
 - **Data Persistence**: Automatic persistence of library items, reading status, favorites, ratings, notes, and theme preference in `localStorage`.
 - **UI/UX**: Dark/Light mode toggle, toast notifications, and responsive desktop/mobile layout.
 
----
-
 ## Tech Stack
 
 - **Framework**: [Vue 3](https://vuejs.org/) (Composition API with `<script setup>`)
@@ -27,8 +23,6 @@
 - **State Management**: [Vuex 4](https://vuex.vuejs.org/)
 - **Build Tool**: [Vite](https://vite.dev/)
 - **Persistence**: Browser `localStorage`
-
----
 
 ## External API Used
 
@@ -42,8 +36,6 @@ This project uses the **Open Library API** (completely free, no API key required
    - `https://covers.openlibrary.org/b/id/{cover_id}-M.jpg` — Retrieves book cover images.
 4. **Open Library / Internet Archive BookReader Embed**
    - `https://archive.org/embed/{ia_id}` — Used in `EmbeddedViewerComponent.vue` to embed an interactive book preview on the `/book/:id` page.
-
----
 
 ## Installation & Setup Instructions
 
