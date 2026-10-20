@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useStore } from 'vuex'
 import { searchBooks } from '@/services/googleBooks.js'
 
@@ -14,26 +14,56 @@ function addToLibrary(book) {
 }
 
 const searchQuery = ref('')
+const activeQuery = ref('')
 const books = ref([])
+const totalItems = ref(0)
 const isLoading = ref(false)
+const isLoadingMore = ref(false)
 const errorMessage = ref('')
 const hasSearched = ref(false)
 
-async function searchBooks_searchbar() {
-  if (!searchQuery.value.trim()) return
+const canLoadMore = computed(() => books.value.length > 0 && books.value.length < totalItems.value)
+
+async function handleSearch() {
+  const query = searchQuery.value.trim()
+  if (!query) return
 
   isLoading.value = true
   errorMessage.value = ''
   hasSearched.value = true
+  activeQuery.value = query
 
   try {
-    const result = await searchBooks(searchQuery.value)
+    const result = await searchBooks(query, 10, 0)
     books.value = result.books
+    totalItems.value = result.totalItems
   } catch (e) {
     errorMessage.value = 'Failed to fetch books. Please try again.\n' + e
     books.value = []
+    totalItems.value = 0
   } finally {
     isLoading.value = false
+  }
+}
+
+async function loadMoreBooks() {
+  if (!activeQuery.value || isLoadingMore.value) return
+
+  isLoadingMore.value = true
+  errorMessage.value = ''
+
+  try {
+    const result = await searchBooks(activeQuery.value, 10, books.value.length)
+    const existingIds = new Set(books.value.map((b) => b.id))
+    const newBooks = result.books.filter((b) => b && !existingIds.has(b.id))
+    books.value = [...books.value, ...newBooks]
+    if (result.books.length === 0) {
+      totalItems.value = books.value.length
+    }
+  } catch (e) {
+    errorMessage.value = 'Failed to load more books. Please try again.\n' + e
+  } finally {
+    isLoadingMore.value = false
   }
 }
 </script>
@@ -44,14 +74,9 @@ async function searchBooks_searchbar() {
   <div class="line">
     <label for="search-bar">Search for any book : </label>
 
-    <input
-      id="search-bar"
-      v-model="searchQuery"
-      type="text"
-      @keydown.enter="searchBooks_searchbar"
-    />
+    <input id="search-bar" v-model="searchQuery" type="text" @keydown.enter="handleSearch" />
 
-    <button :disabled="isLoading" @click="searchBooks_searchbar">
+    <button :disabled="isLoading" @click="handleSearch">
       {{ isLoading ? 'Searching...' : 'Search' }}
     </button>
   </div>
@@ -85,5 +110,11 @@ async function searchBooks_searchbar() {
         </button>
       </div>
     </article>
+
+    <div v-if="canLoadMore" class="load-more-container">
+      <button :disabled="isLoadingMore" @click="loadMoreBooks">
+        {{ isLoadingMore ? 'Loading more...' : 'Load more' }}
+      </button>
+    </div>
   </div>
 </template>
