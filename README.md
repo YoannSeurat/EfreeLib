@@ -1,20 +1,157 @@
 # EfreeLib
 
-The goal of this project is to design and develop a Vue.js application that allows users to manage a collection of books or movies.
+**EfreeLib** is a Vue.js web application for searching millions of books via the Open Library API, curating a personal library, tracking reading progress with dated library stamps, managing favourites, and recording personal ratings and notes.
 
-Users will search for books using an API, add them to their personal library, manage favorites, and track their watching status.
+---
 
-The project combines UI/UX design, Vue.js, Vue Router, Vuex, an external API, and localStorage.
+## Features
 
-####  Example :
+### Core Features
+- **Catalogue Search (`/`)**:
+  - Search books by title, author, keyword, or ISBN via the Open Library Search API.
+  - Displays book **title**, **author**, **publication year**, and **cover image** (with an automatic typeset cover fallback when no cover exists).
+  - Keyboard shortcut (`/`) to jump to the search bar from anywhere, plus live search query echoing on the Home hero mark.
+  - Featured shelf of catalogue picks displayed before searching.
+- **Personal Library (`/library`)**:
+  - Shelve books directly from search results or the book details page (with duplicate prevention).
+  - Toggle books between **To read** and **Read** (automatically stamping read books with the completion date, e.g., `20 OCT 2026`).
+  - Add or remove books from **Favourites**.
+  - Remove books from your library with a **confirmation prompt** (`window.confirm`) to prevent accidental deletion.
+- **Favourites (`/favorites`)**:
+  - Dedicated view displaying all favourite books retrieved through the `favoriteBooks` Vuex getter.
+- **Data Persistence (`localStorage`)**:
+  - Library items, reading status, read timestamps, favourites, personal ratings, personal notes, and theme preference (`light` / `dark`) are automatically persisted in `localStorage`.
 
-A user searches for "1984".
+### Advanced Features
+- **Library Statistics & Visual Reading Dial**:
+  - Displays total shelved books, read count, remaining (to read) count, favourites count, and average personal rating (`Avg X / 5 ★`), accompanied by the interactive SVG `ReadingDial` progress meter.
+- **Filters, Search & Sorting in Library**:
+  - Filter shelved books by title/author text search, reading status (`All`, `To read`, `Read`), or `Favourites only`.
+  - Sort by **Date added**, **Title**, or **Publication year**.
+- **Book Details & Interactive Sample Reader (`/book/:id`)**:
+  - Dynamic route displaying full catalogue card metadata (subtitle, author, publisher, publication year, page count, language, subjects, ISBN, community rating, and spine call number).
+  - Embeds the interactive **Open Library / Internet Archive BookReader** (`https://archive.org/embed/{iaId}`) when a digital lendable/preview scan is available, with a direct link fallback to Open Library.
+- **Personal Rating System (1–5 Stars)**:
+  - Rate any shelved book from 1 to 5 stars (click the active star again to clear). Ratings are displayed on both the `/book/:id` page and `/library` book cards, and aggregated into the library's average rating.
+- **Personal Notes / Reviews**:
+  - Write and save a personal note or short review for any book in your library, persisted in Vuex and `localStorage`.
+- **Better API & UI/UX Experience**:
+  - Animated SVG loading states, error notices with retry actions, empty states for Search, Library, and Favourites, **"Load more volumes"** pagination, **Light / Dark mode toggle** in the masthead, and **toast notifications** when shelving, removing, or saving notes.
 
-The application sends a request to a book API and retrieves:
-- Title: 1984
-- Author: George Orwell
-- Year: 2014
-- Poster
-- Description
+---
 
-The user can then add the movie to their personal library.
+## Tech Stack
+
+- **Framework**: [Vue 3](https://vuejs.org/) (Composition API with `<script setup>`)
+- **Routing**: [Vue Router 5](https://router.vuejs.org/)
+- **State Management**: [Vuex 4](https://vuex.vuejs.org/)
+- **Build Tool**: [Vite 8](https://vite.dev/)
+- **Linting & Formatting**: `oxlint`, `eslint` (`eslint-plugin-vue`), and `oxfmt`
+- **Persistence**: Browser `localStorage`
+
+---
+
+## External API Used
+
+This project uses the **Open Library API** (free, open, no API key required):
+
+1. **Open Library Search API**
+   - `GET https://openlibrary.org/search.json?q={query}&limit={maxResults}&offset={startIndex}&fields=...`
+   - Used in [`searchBooks()`](src/services/openLibrary.js) to search volumes and retrieve keys, titles, subtitles, authors, first publish year, cover IDs, ISBNs, Internet Archive IDs (`ia`), publishers, median page counts, subjects, languages, and community ratings.
+2. **Open Library Works API**
+   - `GET https://openlibrary.org/works/{workId}.json`
+   - Used in [`getBookById()`](src/services/openLibrary.js) alongside a keyed search lookup to retrieve full work descriptions and subject metadata for the `/book/:id` page.
+3. **Open Library Covers API**
+   - `https://covers.openlibrary.org/b/id/{coverId}-M.jpg`
+   - Used to display book covers, with a custom typeset SVG fallback (`PlainCover.vue`) when a volume has no cover image.
+4. **Internet Archive / Open Library BookReader Embed**
+   - `https://archive.org/embed/{iaId}`
+   - Used in [`EmbeddedViewerComponent.vue`](src/components/EmbeddedViewerComponent.vue) to embed an interactive book preview on `/book/:id`.
+
+---
+
+## Project Structure
+
+```text
+src/
+├── components/
+│   ├── AppMasthead.vue             # Sticky header: brand mark, search bar, nav tabs, theme toggle
+│   ├── BookCard.vue                # Book card: cover, title, author, year, rating, shelf actions
+│   ├── BookCover.vue               # Cover image wrapper with ReadStamp overlay & PlainCover fallback
+│   ├── BookShelf.vue               # Section shelf container (grid or horizontal row)
+│   ├── BrandMark.vue               # EfreeLib geometric SVG mark (bars, reel, rings, baseline)
+│   ├── CatalogCard.vue             # Library catalogue card displaying full book metadata
+│   ├── EmbeddedViewerComponent.vue # Internet Archive / Open Library interactive preview iframe
+│   ├── MarkHero.vue                # Interactive home hero mark (Search, Library, Favourites)
+│   ├── PlainCover.vue              # Typeset two-ink cover for books without cover images
+│   ├── QuoteBand.vue               # Full-bleed footer quote banner
+│   ├── ReadStamp.vue               # Dated "READ" ink stamp badge
+│   ├── ReadingDial.vue             # SVG reading progress visualization for the Library page
+│   ├── SpineLabel.vue              # Library call-number label (Subject / Author / Year)
+│   └── StatusNotice.vue            # Loading, empty, and error state notices
+├── router/
+│   └── index.js                    # Vue Router routes (/, /library, /favorites, /book/:id)
+├── services/
+│   └── openLibrary.js              # Open Library API client (searchBooks, getBookById, formatBook)
+├── store/
+│   └── index.js                    # Vuex store + localStorage persistence
+├── styles/
+│   ├── components.css              # Design system component styles
+│   └── tokens.css                  # Light & dark theme CSS custom properties and typography
+├── utils/
+│   └── book.js                     # Helpers for call numbers, stamp dates, and cover detection
+├── views/
+│   ├── BookDetailsView.vue         # Book details, rating, personal notes, and sample reader
+│   ├── FavoritesView.vue           # Favourites shelf view
+│   ├── HomeView.vue                # Catalogue search, results pagination, and featured picks
+│   └── LibraryView.vue             # Personal library, stats dial, filters/sorting, To Read & Read shelves
+├── App.vue                         # Root shell with masthead, toast notifications, and router view
+├── main.js                         # App entry point
+└── style.css                       # Global layout and page styles
+```
+
+---
+
+## Installation & Setup Instructions
+
+### Prerequisites
+
+- **Node.js** `^22.18.0` or `>=24.12.0`
+- **npm** or **pnpm**
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/YoannSeurat/EfreeLib.git
+cd EfreeLib
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+# or with pnpm:
+pnpm install
+```
+
+### 3. Start the development server
+
+```bash
+npm run dev
+```
+
+Open the local URL shown in the terminal (default: `http://localhost:5173`).
+
+### 4. Build and preview for production
+
+```bash
+npm run build
+npm run preview
+```
+
+### 5. Lint and format
+
+```bash
+npm run lint
+npm run format
+```

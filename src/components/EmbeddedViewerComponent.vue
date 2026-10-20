@@ -3,14 +3,6 @@ import { ref, computed, watch } from 'vue'
 import BrandMark from '@/components/BrandMark.vue'
 
 const props = defineProps({
-  bookId: {
-    type: String,
-    default: '',
-  },
-  isbn: {
-    type: String,
-    default: '',
-  },
   iaId: {
     type: String,
     default: '',

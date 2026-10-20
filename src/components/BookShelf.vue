@@ -1,5 +1,7 @@
 <script setup>
 // A section built like the mark: title on a bar, count in the reel column, books on the baseline.
+import { useId } from 'vue'
+
 defineProps({
   title: { type: String, required: true },
   meta: { type: String, default: '' },
@@ -9,7 +11,7 @@ defineProps({
   anchor: { type: String, default: '' },
 })
 
-const id = `shelf-${Math.random().toString(36).slice(2, 8)}`
+const id = useId()
 </script>
 
 <template>

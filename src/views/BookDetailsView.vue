@@ -26,13 +26,18 @@ async function fetchBookDetails() {
   isLoading.value = true
   errorMessage.value = ''
 
+  const shelvedCopy = store.getters.libraryBooks.find((b) => b.id === bookId || b.id === rawId)
+
   try {
-    book.value = await getBookById(bookId)
+    const fetched = await getBookById(bookId)
+    if (shelvedCopy?.authors && (!fetched.authors || fetched.authors === 'Unknown Author')) {
+      fetched.authors = shelvedCopy.authors
+    }
+    book.value = fetched
     noteDraft.value = store.getters.getBookNote(book.value?.id || bookId)
   } catch (error) {
     // The catalogue is out of reach, but a book on the shelf still has its own copy
-    const copy = store.getters.libraryBooks.find((b) => b.id === bookId || b.id === rawId)
-    if (copy) {
+    if (shelvedCopy) {
       book.value = {
         subtitle: '',
         isbn: '',
@@ -43,9 +48,9 @@ async function fetchBookDetails() {
         averageRating: null,
         ratingsCount: 0,
         previewLink: `https://openlibrary.org/works/${bookId}`,
-        ...copy,
+        ...shelvedCopy,
       }
-      noteDraft.value = store.getters.getBookNote(copy.id)
+      noteDraft.value = store.getters.getBookNote(shelvedCopy.id)
     } else {
       book.value = null
       errorMessage.value = error.fullMessage || error.message || 'The book could not be loaded.'
@@ -84,6 +89,14 @@ const descriptionParagraphs = computed(() => {
   return parts.length ? parts : ['No description available.']
 })
 
+function goBack() {
+  if (window.history.state?.back) {
+    router.back()
+  } else {
+    router.push('/')
+  }
+}
+
 function addToLibrary() {
   if (!book.value) return
   store.dispatch('addBook', book.value)
@@ -99,6 +112,11 @@ function toggleFavorite() {
 }
 
 function removeFromLibrary() {
+  if (!book.value) return
+  const confirmed = window.confirm(
+    `Are you sure you want to remove "${book.value.title}" from your library?`,
+  )
+  if (!confirmed) return
   store.dispatch('removeBook', book.value.id)
 }
 
@@ -117,9 +135,7 @@ function saveNote() {
 
 <template>
   <div class="details">
-    <button class="el-btn el-btn--quiet details__back" type="button" @click="router.back()">
-      Back
-    </button>
+    <button class="el-btn el-btn--quiet details__back" type="button" @click="goBack">Back</button>
 
     <StatusNotice v-if="isLoading" kind="loading">Fetching the catalogue card…</StatusNotice>
 
@@ -222,8 +238,6 @@ function saveNote() {
       </section>
 
       <EmbeddedViewerComponent
-        :book-id="book.id"
-        :isbn="book.isbn"
         :ia-id="book.iaId || ''"
         :preview-link="book.previewLink"
         source-name="Open Library"

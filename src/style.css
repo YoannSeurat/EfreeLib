@@ -314,6 +314,70 @@ html {
   letter-spacing: 0.04em;
 }
 
+/* ---------- Theme toggle & card actions ---------- */
+.el-theme-btn {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.el-theme-btn--mobile {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  margin-bottom: 0.375rem;
+  color: var(--ink);
+}
+.el-mast__menu {
+  align-items: center;
+  gap: var(--space-2);
+}
+.el-tag--btn {
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+.el-tag--btn:hover {
+  border-color: var(--index-blue);
+  color: var(--index-blue);
+}
+.el-book__rating {
+  margin: 0;
+  color: var(--stamp-ink);
+  letter-spacing: 0.08em;
+}
+.el-book__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.el-remove-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: var(--stroke-hair) solid var(--hairline);
+  background: transparent;
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    color 120ms ease,
+    background-color 120ms ease;
+}
+.el-remove-btn:hover {
+  border-color: var(--error);
+  color: var(--error);
+  background: var(--error-soft);
+}
+
 /* ---------- Home load more ---------- */
 .home-more {
   display: flex;

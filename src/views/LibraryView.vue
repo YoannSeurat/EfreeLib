@@ -11,6 +11,7 @@ const store = useStore()
 const books = computed(() => store.getters.libraryBooks)
 const count = computed(() => store.getters.libraryCount)
 const readCount = computed(() => store.getters.readCount)
+const favoriteCount = computed(() => store.getters.favoriteCount)
 const averageRating = computed(() => store.getters.averageRating)
 
 const librarySearch = ref('')
@@ -72,9 +73,9 @@ function volumes(n) {
   <header class="page-head">
     <h1 class="page-head__title spine-xl">Your library</h1>
     <p class="page-head__aside label">
-      {{ volumes(count) }}, {{ readCount }} read<template v-if="averageRating !== null">
-        · Avg {{ averageRating }} / 5 ★
-      </template>
+      {{ volumes(count) }} · {{ readCount }} read · {{ favoriteCount }} favourite{{
+        favoriteCount === 1 ? '' : 's'
+      }}<template v-if="averageRating !== null"> · Avg {{ averageRating }} / 5 ★</template>
     </p>
   </header>
 
