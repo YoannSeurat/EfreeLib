@@ -21,6 +21,8 @@ const store = createStore({
 
   getters: {
     libraryBooks: (state) => state.library,
+    favoriteBooks: (state) => state.library.filter((book) => book.favorite),
+    favorites: (state) => state.library.filter((book) => book.favorite),
     libraryCount: (state) => state.library.length,
     isInLibrary: (state) => (id) => state.library.some((book) => book.id === id),
     isRead: (state) => (id) => state.library.find((book) => book.id === id)?.read ?? false,
@@ -38,6 +40,10 @@ const store = createStore({
       const book = state.library.find((b) => b.id === id)
       if (book) book.read = read
     },
+    SET_FAVORITE(state, { id, favorite }) {
+      const book = state.library.find((b) => b.id === id)
+      if (book) book.favorite = favorite
+    },
   },
 
   actions: {
@@ -51,6 +57,7 @@ const store = createStore({
         cover: book.cover,
         description: book.description,
         read: false,
+        favorite: false,
         addedAt: new Date().toISOString(),
       })
       saveLibrary(state.library)
@@ -62,6 +69,12 @@ const store = createStore({
     toggleRead({ commit, getters, state }, id) {
       if (!getters.isInLibrary(id)) return
       commit('SET_READ', { id, read: !getters.isRead(id) })
+      saveLibrary(state.library)
+    },
+    toggleFavorite({ commit, getters, state }, id) {
+      if (!getters.isInLibrary(id)) return
+      const book = state.library.find((item) => item.id === id)
+      commit('SET_FAVORITE', { id, favorite: !book.favorite })
       saveLibrary(state.library)
     },
   },

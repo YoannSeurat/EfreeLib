@@ -15,6 +15,10 @@ function removeFromLibrary(id) {
 function toggleRead(id) {
   store.dispatch('toggleRead', id)
 }
+
+function toggleFavorite(id) {
+  store.dispatch('toggleFavorite', id)
+}
 </script>
 
 <template>
@@ -46,6 +50,9 @@ function toggleRead(id) {
         <div class="line">
           <button @click="toggleRead(book.id)">
             {{ book.read ? 'Mark as unread' : 'Mark as read' }}
+          </button>
+          <button @click="toggleFavorite(book.id)">
+            {{ book.favorite ? 'Remove from favorites' : 'Add to favorites' }}
           </button>
           <button @click="removeFromLibrary(book.id)">Remove</button>
         </div>

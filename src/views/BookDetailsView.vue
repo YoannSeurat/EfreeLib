@@ -1,62 +1,70 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { getBookById } from '@/services/googleBooks.js'
-import EmbeddedViewerComponent from '@/components/EmbeddedViewerComponent.vue'
-import { useStore } from 'vuex'
+import { ref, onMounted, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { getBookById } from "@/services/googleBooks.js";
+import EmbeddedViewerComponent from "@/components/EmbeddedViewerComponent.vue";
+import { useStore } from "vuex";
 
-const route = useRoute()
-const router = useRouter()
+const route = useRoute();
+const router = useRouter();
 
-const book = ref(null)
-const isLoading = ref(true)
-const errorMessage = ref('')
+const book = ref(null);
+const isLoading = ref(true);
+const errorMessage = ref("");
 
 async function fetchBookDetails() {
-  const bookId = route.params.id
-  if (!bookId) return
+  const bookId = route.params.id;
+  if (!bookId) return;
 
-  isLoading.value = true
-  errorMessage.value = ''
+  isLoading.value = true;
+  errorMessage.value = "";
 
   try {
-    const data = await getBookById(bookId)
-    book.value = data
+    const data = await getBookById(bookId);
+    book.value = data;
   } catch (error) {
     errorMessage.value =
-      'Failed to load book details. Please try again. ' + (error.message || error)
+      "Failed to load book details. Please try again. " + (error.message || error);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
 }
 
 onMounted(() => {
-  fetchBookDetails()
-})
+  fetchBookDetails();
+});
 
 watch(
   () => route.params.id,
   () => {
-    fetchBookDetails()
+    fetchBookDetails();
   },
-)
+);
 
-const store = useStore()
+const store = useStore();
 
 function isInLibrary(id) {
-  return store.getters.isInLibrary(id)
+  return store.getters.isInLibrary(id);
 }
 
 function addToLibrary(book) {
-  store.dispatch('addBook', book)
+  store.dispatch("addBook", book);
 }
 
 function isRead(id) {
-  return store.getters.isRead(id)
+  return store.getters.isRead(id);
 }
 
 function toggleRead(id) {
-  store.dispatch('toggleRead', id)
+  store.dispatch("toggleRead", id);
+}
+
+function isFavorite(id) {
+  return store.getters.favoriteBooks.some((favoriteBook) => favoriteBook.id === id);
+}
+
+function toggleFavorite(id) {
+  store.dispatch("toggleFavorite", id);
 }
 </script>
 
@@ -81,13 +89,13 @@ function toggleRead(id) {
           <p v-if="book.pageCount"><strong>Pages:</strong> {{ book.pageCount }}</p>
           <p v-if="book.language"><strong>Language:</strong> {{ book.language.toUpperCase() }}</p>
           <p v-if="book.categories?.length">
-            <strong>Categories:</strong> {{ book.categories.join(', ') }}
+            <strong>Categories:</strong> {{ book.categories.join(", ") }}
           </p>
           <p v-if="book.isbn"><strong>ISBN:</strong> {{ book.isbn }}</p>
           <p v-if="book.averageRating">
             <strong>Rating:</strong> {{ book.averageRating }} / 5 ({{ book.ratingsCount }} reviews)
           </p>
-          <p v-if="book.previewLink">
+          <p v-if="book.previewLink" class="view-google-books">
             <a :href="book.previewLink" target="_blank" rel="noopener noreferrer">
               View on Google Books ↗
             </a>
@@ -97,10 +105,13 @@ function toggleRead(id) {
 
       <div class="line">
         <button :disabled="isInLibrary(book.id)" @click="addToLibrary(book)">
-          {{ isInLibrary(book.id) ? 'In library' : 'Add to library' }}
+          {{ isInLibrary(book.id) ? "In library" : "Add to library" }}
         </button>
         <button v-if="isInLibrary(book.id)" @click="toggleRead(book.id)">
-          {{ isRead(book.id) ? 'Mark as unread' : 'Mark as read' }}
+          {{ isRead(book.id) ? "Mark as unread" : "Mark as read" }}
+        </button>
+        <button v-if="isFavorite(book.id)" @click="toggleFavorite(book.id)">
+          {{ isFavorite(book.id) ? "Remove from favorites" : "Add to favorites" }}
         </button>
       </div>
 

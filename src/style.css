@@ -32,6 +32,9 @@ a:hover {
 a:active {
   transform: scale(0.95);
 }
+.view-google-books a {
+  color: blue;
+}
 h3 {
   color: black;
 }
