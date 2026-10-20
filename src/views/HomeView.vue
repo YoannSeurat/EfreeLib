@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { searchBooks } from '@/services/googleBooks.js'
+import { searchBooks, getFeaturedBooks } from '@/services/books.js'
 import { hasCover } from '@/utils/book.js'
 import MarkHero from '@/components/MarkHero.vue'
 import BookShelf from '@/components/BookShelf.vue'
@@ -18,6 +18,7 @@ const hasSearched = computed(() => Boolean(lastQuery.value))
 
 const books = ref([])
 const totalItems = ref(0)
+const sourceName = ref('')
 const isLoading = ref(false)
 const errorMessage = ref('')
 
@@ -34,8 +35,9 @@ async function runSearch() {
     if (query !== lastQuery.value) return
     books.value = result.books
     totalItems.value = result.totalItems
+    sourceName.value = result.sourceName
   } catch (e) {
-    errorMessage.value = `${e.message || 'The request failed'}. Check your connection and search again.`
+    errorMessage.value = e.fullMessage || e.message || 'The search failed. Try again.'
   } finally {
     isLoading.value = false
   }
@@ -45,11 +47,13 @@ watch(lastQuery, runSearch, { immediate: true })
 
 // A shelf of picks shown before the first search
 const picks = ref([])
+const picksSource = ref('')
 
 onMounted(async () => {
   try {
-    const result = await searchBooks('subject:fiction', 20)
-    picks.value = result.books.filter((book) => hasCover(book.cover)).slice(0, 6)
+    const result = await getFeaturedBooks(24)
+    picks.value = result.books.filter((book) => hasCover(book.cover)).slice(0, 12)
+    picksSource.value = result.sourceName
   } catch {
     picks.value = []
   }
@@ -57,7 +61,7 @@ onMounted(async () => {
 
 const resultsMeta = computed(() => {
   const shown = books.value.length
-  return `Showing ${shown} of ${totalItems.value.toLocaleString('en-US')}`
+  return `Showing ${shown} of ${totalItems.value.toLocaleString('en-US')} on ${sourceName.value}`
 })
 </script>
 
@@ -65,8 +69,7 @@ const resultsMeta = computed(() => {
   <section :class="['home-intro', { 'is-compact': hasSearched }]" aria-label="EfreeLib">
     <MarkHero :compact="hasSearched" />
     <p class="lede home-lede">
-      Search a few million volumes on Google Books, shelve the ones you want, and stamp them when
-      you finish.
+      Search millions of volumes, shelve the ones you want, and stamp them when you finish.
     </p>
   </section>
 
@@ -74,7 +77,7 @@ const resultsMeta = computed(() => {
     Searching the catalogue for “{{ lastQuery }}”…
   </StatusNotice>
 
-  <StatusNotice v-else-if="errorMessage" kind="error" title="Google Books didn’t answer">
+  <StatusNotice v-else-if="errorMessage" kind="error" title="The catalogue didn’t answer">
     {{ errorMessage }}
     <template #action>
       <button class="el-btn" type="button" @click="runSearch">Search again</button>
@@ -82,7 +85,7 @@ const resultsMeta = computed(() => {
   </StatusNotice>
 
   <StatusNotice v-else-if="hasSearched && books.length === 0" kind="empty" title="Nothing matches">
-    No volumes on Google Books match “{{ lastQuery }}”. Check the spelling, or try an author’s
+    No volumes match “{{ lastQuery }}” on {{ sourceName }}. Check the spelling, or try an author’s
     surname or an ISBN.
   </StatusNotice>
 
@@ -98,7 +101,7 @@ const resultsMeta = computed(() => {
   <BookShelf
     v-else-if="picks.length"
     title="This month"
-    meta="Fiction on Google Books"
+    :meta="`Trending on ${picksSource}`"
     layout="row"
   >
     <RouterLink

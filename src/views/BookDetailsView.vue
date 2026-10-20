@@ -2,7 +2,8 @@
 import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
-import { getBookById } from '@/services/googleBooks.js'
+import { getBookById } from '@/services/books.js'
+import { isOpenLibraryId } from '@/services/openLibrary.js'
 import EmbeddedViewerComponent from '@/components/EmbeddedViewerComponent.vue'
 import BookCover from '@/components/BookCover.vue'
 import CatalogCard from '@/components/CatalogCard.vue'
@@ -27,7 +28,25 @@ async function fetchBookDetails() {
   try {
     book.value = await getBookById(bookId)
   } catch (error) {
-    errorMessage.value = `${error.message || 'The request failed'}. Check your connection and try again.`
+    // The catalogue is out of reach, but a book on the shelf still has its own copy
+    const copy = store.getters.libraryBooks.find((b) => b.id === bookId)
+    if (copy) {
+      book.value = {
+        subtitle: '',
+        isbn: '',
+        publisher: '',
+        pageCount: null,
+        language: '',
+        averageRating: null,
+        ratingsCount: 0,
+        previewLink: '',
+        sourceName: isOpenLibraryId(bookId) ? 'Open Library' : 'Google Books',
+        ...copy,
+      }
+    } else {
+      book.value = null
+      errorMessage.value = error.fullMessage || error.message || 'The book could not be loaded.'
+    }
   } finally {
     isLoading.value = false
   }
@@ -128,21 +147,23 @@ function removeFromLibrary() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            Open on Google Books
+            Open on {{ book.sourceName || 'Google Books' }}
           </a>
         </div>
       </div>
 
       <section class="details__section" aria-labelledby="about-title">
         <h2 id="about-title" class="details__section-title">About this book</h2>
-        <!-- Google Books returns the description as simple HTML -->
+        <!-- Descriptions arrive as simple HTML: Google's own, or Open Library text escaped in the service -->
         <div class="details__description body" v-html="book.description"></div>
       </section>
 
       <EmbeddedViewerComponent
-        :book-id="book.id"
+        :book-id="isOpenLibraryId(book.id) ? '' : book.id"
         :isbn="book.isbn"
+        :other-isbns="book.otherIsbns || []"
         :preview-link="book.previewLink"
+        :source-name="book.sourceName || 'Google Books'"
       />
     </template>
   </div>

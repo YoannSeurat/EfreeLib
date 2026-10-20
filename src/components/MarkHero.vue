@@ -36,22 +36,6 @@ const echoSize = computed(() => {
   return `${Math.min(14.5, Math.max(4, (43 * 0.95) / (n * 0.42))).toFixed(2)}cqi`
 })
 
-// The reel advances as the page scrolls, like film through a projector
-const heroRef = ref(null)
-let frame = 0
-function onScroll() {
-  if (frame) return
-  frame = requestAnimationFrame(() => {
-    frame = 0
-    heroRef.value?.style.setProperty('--reel-turn', `${(window.scrollY * 0.3).toFixed(1)}deg`)
-  })
-}
-onMounted(() => window.addEventListener('scroll', onScroll, { passive: true }))
-onBeforeUnmount(() => {
-  window.removeEventListener('scroll', onScroll)
-  cancelAnimationFrame(frame)
-})
-
 function focusSearch() {
   const input = document.getElementById('nav-search')
   if (!input) return
@@ -62,7 +46,6 @@ function focusSearch() {
 
 <template>
   <div
-    ref="heroRef"
     :class="['el-hero', { 'is-compact': compact, 'is-entering': entering }]"
     :data-active="active"
     @mouseleave="active = -1"

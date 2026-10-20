@@ -904,14 +904,6 @@ a:focus-visible .el-cover--riso img {
 .el-hero .el-mark__base {
   transition: fill 200ms ease;
 }
-.el-hero .el-mark__reel {
-  rotate: var(--reel-turn, 0deg);
-}
-@media (prefers-reduced-motion: reduce) {
-  .el-hero .el-mark__reel {
-    rotate: none;
-  }
-}
 .el-hero .el-mark__ring {
   fill: var(--paper);
   transform-box: fill-box;

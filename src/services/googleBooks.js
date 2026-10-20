@@ -1,5 +1,13 @@
+import { fetchJson } from './apiError.js'
+
 const GOOGLE_API_KEY = import.meta.env?.VITE_GOOGLE_API_KEY || ''
 const BASE_URL = 'https://www.googleapis.com/books/v1/volumes'
+
+export const SOURCE_NAME = 'Google Books'
+
+/** True when a key is configured (VITE_GOOGLE_API_KEY in .env). Without one, every request
+ *  shares Google's small anonymous quota, which is often used up. */
+export const hasGoogleKey = Boolean(GOOGLE_API_KEY)
 
 /**
  * Formats a raw Google Books volume object into a clean, normalized structure.
@@ -30,6 +38,8 @@ export function formatBook(item) {
 
   return {
     id: item.id,
+    source: 'google',
+    sourceName: SOURCE_NAME,
     isbn,
     title: info.title || 'Untitled',
     subtitle: info.subtitle || '',
@@ -52,39 +62,28 @@ export function formatBook(item) {
 
 /**
  * Searches for books using a text query.
+ * Returns { totalItems, books, sourceName }.
  */
 export async function searchBooks(query, maxResults = 10, startIndex = 0) {
   if (!query?.trim()) {
-    return { totalItems: 0, books: [] }
+    return { totalItems: 0, books: [], sourceName: SOURCE_NAME }
   }
 
   const params = new URLSearchParams({
     q: query.trim(),
     maxResults: String(maxResults),
     startIndex: String(startIndex),
-    key: GOOGLE_API_KEY,
+    printType: 'books',
   })
+  // Only send a key when there is one: an empty `key=` is not the same as none
+  if (GOOGLE_API_KEY) params.set('key', GOOGLE_API_KEY)
 
-  const url = `${BASE_URL}?${params.toString()}`
+  const data = await fetchJson(`${BASE_URL}?${params.toString()}`, SOURCE_NAME)
 
-  try {
-    const response = await fetch(url)
-
-    if (!response.ok) {
-      throw new Error(`Google Books API error: ${response.status} ${response.statusText}`)
-    }
-
-    const data = await response.json()
-
-    const books = (data.items || []).map(formatBook)
-
-    return {
-      totalItems: data.totalItems || 0,
-      books,
-    }
-  } catch (error) {
-    console.error('Failed to search books:', error)
-    throw error
+  return {
+    totalItems: data.totalItems || 0,
+    books: (data.items || []).map(formatBook),
+    sourceName: SOURCE_NAME,
   }
 }
 
@@ -98,20 +97,8 @@ export async function getBookById(volumeId) {
   }
 
   const url = GOOGLE_API_KEY
-    ? `${BASE_URL}/${volumeId}?key=${GOOGLE_API_KEY}`
-    : `${BASE_URL}/${volumeId}`
+    ? `${BASE_URL}/${encodeURIComponent(volumeId)}?key=${GOOGLE_API_KEY}`
+    : `${BASE_URL}/${encodeURIComponent(volumeId)}`
 
-  try {
-    const response = await fetch(url)
-
-    if (!response.ok) {
-      throw new Error(`Google Books API error: ${response.status} ${response.statusText}`)
-    }
-
-    const item = await response.json()
-    return formatBook(item)
-  } catch (error) {
-    console.error(`Failed to fetch book with ID ${volumeId}:`, error)
-    throw error
-  }
+  return formatBook(await fetchJson(url, SOURCE_NAME))
 }
