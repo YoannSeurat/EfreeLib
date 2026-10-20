@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useStore } from 'vuex'
-import { searchBooks } from '@/services/googleBooks.js'
+import { searchBooks } from '@/services/openLibrary.js'
 
 const store = useStore()
 

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getBookById } from '@/services/googleBooks.js'
+import { getBookById } from '@/services/openLibrary.js'
 import EmbeddedViewerComponent from '@/components/EmbeddedViewerComponent.vue'
 import { useStore } from 'vuex'
 
@@ -108,9 +108,9 @@ function saveNote(id) {
           <p v-if="book.averageRating">
             <strong>Rating:</strong> {{ book.averageRating }} / 5 ({{ book.ratingsCount }} reviews)
           </p>
-          <p v-if="book.previewLink" class="view-google-books">
+          <p v-if="book.previewLink" class="view-open-library">
             <a :href="book.previewLink" target="_blank" rel="noopener noreferrer">
-              View on Google Books ↗
+              View on Open Library ↗
             </a>
           </p>
         </div>
@@ -161,10 +161,11 @@ function saveNote(id) {
         <div class="description-text" v-html="book.descriptionHtml || book.description"></div>
       </div>
 
-      <!-- Embedded Google Books Viewer -->
+      <!-- Embedded Open Library Viewer -->
       <EmbeddedViewerComponent
         :book-id="book.id"
         :isbn="book.isbn"
+        :ia-id="book.iaId"
         :preview-link="book.previewLink"
       />
     </div>
