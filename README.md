@@ -2,7 +2,7 @@
 
 **EfreeLib** is a Vue.js web application for searching millions of books via the Open Library API, curating a personal library, tracking reading progress with dated library stamps, managing favourites, and recording personal ratings and notes.
 
-[> Click here to go to Figma design](https://www.figma.com/design/xLFk4IKKQ5vvfk0K4B90O0/EfreeLib-UX-Design?node-id=0-1&t=eJYVj1eFCIXoA1GP-1)
+[> Click here to go to the Figma design](https://www.figma.com/design/xLFk4IKKQ5vvfk0K4B90O0/EfreeLib-UX-Design?node-id=0-1&t=eJYVj1eFCIXoA1GP-1)
 
 ## Installation & Setup Instructions
 
