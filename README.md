@@ -44,7 +44,7 @@ Open the local URL shown in the terminal (default: `http://localhost:5173`).
 - **Favourites (`/favorites`)**:
   - Dedicated view displaying all favourite books retrieved through the `favoriteBooks` Vuex getter.
 - **Data Persistence (`localStorage`)**:
-  - Library items, reading status, read timestamps, favourites, personal ratings, personal notes, and theme preference (`light` / `dark`) are automatically persisted in `localStorage`.
+  - Library items, reading status, read timestamps, favourites, personal ratings, and personal notes are automatically persisted in `localStorage`.
 
 ### Advanced Features
 
@@ -61,7 +61,7 @@ Open the local URL shown in the terminal (default: `http://localhost:5173`).
 - **Personal Notes / Reviews**:
   - Write and save a personal note or short review for any book in your library, persisted in Vuex and `localStorage`.
 - **Better API & UI/UX Experience**:
-  - Animated SVG loading states, error notices with retry actions, empty states for Search, Library, and Favourites, **"Load more volumes"** pagination, **Light / Dark mode toggle** in the masthead, and **toast notifications** when shelving, removing, or saving notes.
+  - Animated SVG loading states, error notices with retry actions, empty states for Search, Library, and Favourites, **"Load more volumes"** pagination, and **toast notifications** when shelving, removing, or saving notes.
 
 ## Tech Stack
 
@@ -89,42 +89,3 @@ This project uses the **Open Library API** (free, open, no API key required):
    - `https://archive.org/embed/{iaId}`
    - Used in [`EmbeddedViewerComponent.vue`](src/components/EmbeddedViewerComponent.vue) to embed an interactive book preview on `/book/:id`.
 
-## Project Structure
-
-```text
-src/
-├── components/
-│   ├── AppMasthead.vue             # Sticky header: brand mark, search bar, nav tabs, theme toggle
-│   ├── BookCard.vue                # Book card: cover, title, author, year, rating, shelf actions
-│   ├── BookCover.vue               # Cover image wrapper with ReadStamp overlay & PlainCover fallback
-│   ├── BookShelf.vue               # Section shelf container (grid or horizontal row)
-│   ├── BrandMark.vue               # EfreeLib geometric SVG mark (bars, reel, rings, baseline)
-│   ├── CatalogCard.vue             # Library catalogue card displaying full book metadata
-│   ├── EmbeddedViewerComponent.vue # Internet Archive / Open Library interactive preview iframe
-│   ├── MarkHero.vue                # Interactive home hero mark (Search, Library, Favourites)
-│   ├── PlainCover.vue              # Typeset two-ink cover for books without cover images
-│   ├── QuoteBand.vue               # Full-bleed footer quote banner
-│   ├── ReadStamp.vue               # Dated "READ" ink stamp badge
-│   ├── ReadingDial.vue             # SVG reading progress visualization for the Library page
-│   ├── SpineLabel.vue              # Library call-number label (Subject / Author / Year)
-│   └── StatusNotice.vue            # Loading, empty, and error state notices
-├── router/
-│   └── index.js                    # Vue Router routes (/, /library, /favorites, /book/:id)
-├── services/
-│   └── openLibrary.js              # Open Library API client (searchBooks, getBookById, formatBook)
-├── store/
-│   └── index.js                    # Vuex store + localStorage persistence
-├── styles/
-│   ├── components.css              # Design system component styles
-│   └── tokens.css                  # Light & dark theme CSS custom properties and typography
-├── utils/
-│   └── book.js                     # Helpers for call numbers, stamp dates, and cover detection
-├── views/
-│   ├── BookDetailsView.vue         # Book details, rating, personal notes, and sample reader
-│   ├── FavoritesView.vue           # Favourites shelf view
-│   ├── HomeView.vue                # Catalogue search, results pagination, and featured picks
-│   └── LibraryView.vue             # Personal library, stats dial, filters/sorting, To Read & Read shelves
-├── App.vue                         # Root shell with masthead, toast notifications, and router view
-├── main.js                         # App entry point
-└── style.css                       # Global layout and page styles
-```
